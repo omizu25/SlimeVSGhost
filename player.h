@@ -10,18 +10,13 @@
 #include "main.h"
 
 //--------------------------------------------------
-//マクロ定義
-//--------------------------------------------------
-#define REFLECT_BOUND		(0.8f)		//バウンドの跳ね返り量
-
-//--------------------------------------------------
 //ジャンプの状態を定義
 //--------------------------------------------------
 typedef enum
 {
 	JUMPSTATE_NONE = 0,		//何もしていない状態
 	JUMPSTATE_JUMP,			//ジャンプ状態
-	JUMPSTATE_BOUND,		//バウンド状態
+	JUMPSTATE_LAND,			//着地状態
 	JUMPSTATE_MAX
 }JUMPSTATE;
 
@@ -64,6 +59,7 @@ typedef struct
 	float			fCol;				//カラー
 	int				nCounterState;		//状態管理カウンター
 	int				nCounterJump;		//ジャンプカウンター
+	int				nCounterMotion;		//モーションカウンター
 	int				nCounterAttack;		//攻撃カウンター
 	int				nLife;				//寿命
 	bool			bDirection;			//向き [false  : 左向き true  : 右向き]

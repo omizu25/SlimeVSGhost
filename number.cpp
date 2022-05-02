@@ -338,3 +338,38 @@ void MoveNumber(D3DXVECTOR3 move, int nNumber, int nDigit, int nRank)
 		s_pVtxBuff->Unlock();
 	}
 }
+
+//--------------------------------------------------
+//数の頂点処理
+//--------------------------------------------------
+void PosNumber(D3DXVECTOR3 pos, int nNumber, int nDigit, int nRank)
+{
+	for (int i = 0; i < MAX_NUMBER; i++)
+	{
+		Number *pNumber = &s_aNumber[i];
+
+		if (!pNumber->bUse || pNumber->nNumber != nNumber ||
+			pNumber->nDigit != nDigit || pNumber->nRank != nRank)
+		{//数が使用されていない、数字が違う、桁数が違う、順位が違う
+			continue;
+		}
+
+		//数が使用されている、数字が同じ、桁数が同じ、順位が同じ
+
+		//位置を更新
+		pNumber->pos.x = pos.x;
+
+		VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+		//頂点情報をロックし、頂点情報へのポインタを取得
+		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+		pVtx += (i * 4);		//該当の位置まで進める
+
+		//頂点座標の設定処理
+		SetRightpos(pVtx, pos, pNumber->fWidth, pNumber->fHeight);
+
+		//頂点バッファをアンロックする
+		s_pVtxBuff->Unlock();
+	}
+}

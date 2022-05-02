@@ -264,7 +264,7 @@ bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove,
 				if (pBlock->type == BLOCKTYPE_BLUE || pBlock->type == BLOCKTYPE_LIGHT_BLUE)
 				{//Žw’è‚ÌŽí—Þ
 					pPos->y = fBottom + fHeight;
-					pMove->y *= -REFLECT_BOUND;
+					pMove->y = 0.0f;
 				}
 			}
 		}

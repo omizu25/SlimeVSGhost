@@ -20,11 +20,12 @@
 //--------------------------------------------------
 #define PLAYER_WIDTH		(80.0f)			//プレイヤーの幅
 #define PLAYER_HEIGHT		(70.0f)			//プレイヤーの高さ
-#define PLAYER_MOVE			(0.3f)			//プレイヤーの移動量
+#define MAX_MOVE			(0.3f)			//移動量の最大値
+#define MIN_MOVE			(0.1f)			//移動量の最小値
+#define MAX_TEX				(3)				//テクスチャの最大数
 #define MAX_U_PATTERN		(2)				//Uパターンの最大数
-#define MIN_MOVE			(0.30f)			//動いてる最小値
+#define STOP_MOVE			(0.30f)			//止まってると認定
 #define MAX_JUMP			(-27.5f)		//ジャンプ量
-#define MAX_BOUND			(5.0f)			//バウンドの最大回数
 #define MAX_GRAVITY			(1.5f)			//重力の最大値
 #define MAX_INERTIA			(0.05f)			//慣性の最大値
 #define MAX_INTERVAL		(7)				//カウンターのインターバル
@@ -45,7 +46,7 @@ static void UpdateMotion(void);
 //--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
-static LPDIRECT3DTEXTURE9			s_pTexture = NULL;			//テクスチャへのポインタ
+static LPDIRECT3DTEXTURE9			s_pTexture[MAX_TEX];		//テクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;			//頂点バッファのポインタ
 static Player						s_Player;					//プレイヤーの情報
 
@@ -57,11 +58,26 @@ void InitPlayer(void)
 	//デバイスへのポインタの取得
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
+	//メモリのクリア
+	memset(&s_pTexture[0], NULL, sizeof(s_pTexture));
+
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\Player002.png",
-		&s_pTexture);
+		&s_pTexture[0]);
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\Player004.png",
+		&s_pTexture[1]);
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\Player006.png",
+		&s_pTexture[2]);
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -109,10 +125,13 @@ void InitPlayer(void)
 //--------------------------------------------------
 void UninitPlayer(void)
 {
-	if (s_pTexture != NULL)
-	{//テクスチャの破棄
-		s_pTexture->Release();
-		s_pTexture = NULL;
+	for (int i = 0; i < MAX_TEX; i++)
+	{
+		if (s_pTexture[i] != NULL)
+		{//テクスチャの破棄
+			s_pTexture[i]->Release();
+			s_pTexture[i] = NULL;
+		}
 	}
 
 	if (s_pVtxBuff != NULL)
@@ -184,8 +203,31 @@ void DrawPlayer(void)
 		break;
 	}
 	
-	//テクスチャの設定
-	pDevice->SetTexture(0, s_pTexture);
+	switch (s_Player.attack)
+	{
+	case ATTACKSTATE_NONE:			//何もしていない状態
+		//テクスチャの設定
+		pDevice->SetTexture(0, s_pTexture[0]);
+
+		break;
+
+	case ATTACKSTATE_IN:			//吸い込んでる状態
+	case ATTACKSTATE_OUT:			//吐き出す状態
+		//テクスチャの設定
+		pDevice->SetTexture(0, s_pTexture[1]);
+
+		break;
+
+	case ATTACKSTATE_STORE:			//蓄えている状態
+		//テクスチャの設定
+		pDevice->SetTexture(0, s_pTexture[2]);
+
+		break;
+
+	default:
+		assert(false);
+		break;
+	}
 
 	//ポリゴンの描画
 	pDevice->DrawPrimitive(
@@ -323,27 +365,29 @@ static void UpdateMove(VERTEX_2D *pVtx)
 	//攻撃処理
 	UpdateAttack();
 
-	if (s_Player.attack != ATTACKSTATE_IN)
+	if (s_Player.attack != ATTACKSTATE_IN && s_Player.attack != ATTACKSTATE_OUT)
 	{//吸い込んでない
 		//キー入力での移動
 		if (GetKeyboardPress(DIK_A) || GetJoypadPress(JOYKEY_LEFT))
 		{//Aキーが押された
-			switch (s_Player.jump)
+			switch (s_Player.attack)
 			{//移動量を更新 (増加させる)
-			case JUMPSTATE_NONE:		//何もしていない
-
-				s_Player.move.x += sinf(-D3DX_PI * 0.5f) * PLAYER_MOVE;
-				s_Player.move.y += cosf(-D3DX_PI * 0.5f) * PLAYER_MOVE;
-
-				break;
-
-			case JUMPSTATE_JUMP:		//ジャンプ
-			case JUMPSTATE_BOUND:		//バウンド
-
-				s_Player.move.x += sinf(-D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
-				s_Player.move.y += cosf(-D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
+			case ATTACKSTATE_NONE:			//何もしていない状態
+				s_Player.move.x += sinf(-D3DX_PI * 0.5f) * MAX_MOVE;
+				s_Player.move.y += cosf(-D3DX_PI * 0.5f) * MAX_MOVE;
 
 				break;
+
+			case ATTACKSTATE_STORE:			//蓄えている状態
+				s_Player.move.x += sinf(-D3DX_PI * 0.5f) * MIN_MOVE;
+				s_Player.move.y += cosf(-D3DX_PI * 0.5f) * MIN_MOVE;
+				
+				break;
+
+			case ATTACKSTATE_IN:			//吸い込んでる状態
+			case ATTACKSTATE_OUT:			//吐き出す状態
+
+				//上のifでここは通らないからbreakなしにしてassertしまーす。
 
 			default:
 				assert(false);
@@ -355,28 +399,30 @@ static void UpdateMove(VERTEX_2D *pVtx)
 		}
 		else if (GetKeyboardPress(DIK_D) || GetJoypadPress(JOYKEY_RIGHT))
 		{//Dキーが押された
-			switch (s_Player.jump)
+			switch (s_Player.attack)
 			{//移動量を更新 (増加させる)
-			case JUMPSTATE_NONE:		//何もしていない
+			case ATTACKSTATE_NONE:			//何もしていない状態
+				s_Player.move.x += sinf(D3DX_PI * 0.5f) * MAX_MOVE;
+				s_Player.move.y += cosf(D3DX_PI * 0.5f) * MAX_MOVE;
 
-				s_Player.move.x += sinf(D3DX_PI * 0.5f) * PLAYER_MOVE;
-				s_Player.move.y += cosf(D3DX_PI * 0.5f) * PLAYER_MOVE;
+				break;
+
+			case ATTACKSTATE_STORE:			//蓄えている状態
+				s_Player.move.x += sinf(D3DX_PI * 0.5f) * MIN_MOVE;
+				s_Player.move.y += cosf(D3DX_PI * 0.5f) * MIN_MOVE;
 
 				break;
 
-			case JUMPSTATE_JUMP:		//ジャンプ
-			case JUMPSTATE_BOUND:		//バウンド
+			case ATTACKSTATE_IN:			//吸い込んでる状態
+			case ATTACKSTATE_OUT:			//吐き出す状態
 
-				s_Player.move.x += sinf(D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
-				s_Player.move.y += cosf(D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
-
-				break;
+				//上のifでここは通らないからbreakなしにしてassertしまーす。
 
 			default:
 				assert(false);
 				break;
 			}
-
+			
 			s_Player.bDirection = true;		//右向き
 		}
 
@@ -413,6 +459,7 @@ static void UpdateMove(VERTEX_2D *pVtx)
 			{//何もしていない
 				s_Player.jump = JUMPSTATE_JUMP;
 				s_Player.fHeight = PLAYER_HEIGHT;
+				s_Player.nCounterMotion = 0;
 				s_Player.nCounterJump = 0;
 			}
 		}
@@ -509,6 +556,7 @@ static bool UpdateUpDown(void)
 			s_Player.move.y += MAX_JUMP;
 			s_Player.jump = JUMPSTATE_JUMP;
 			s_Player.fHeight = PLAYER_HEIGHT;
+			s_Player.nCounterMotion = 0;
 			s_Player.nCounterJump = 0;
 		}
 	}
@@ -532,7 +580,7 @@ static void UpdateOffScreen(void)
 	else if (s_Player.pos.y <= PLAYER_HEIGHT)
 	{//上端
 		s_Player.pos.y = PLAYER_HEIGHT;
-		s_Player.move.y *= -REFLECT_BOUND;
+		s_Player.move.y = 0.0f;
 	}
 
 	if (s_Player.pos.x >= SCREEN_WIDTH - (PLAYER_WIDTH * 0.5f))
@@ -557,19 +605,19 @@ static void UpdateBound(void)
 		break;
 
 	case JUMPSTATE_JUMP:		//ジャンプ
-		s_Player.jump = JUMPSTATE_BOUND;
+		s_Player.jump = JUMPSTATE_LAND;
 
-		//break無し
+		break;
 
-	case JUMPSTATE_BOUND:		//バウンド
+	case JUMPSTATE_LAND:		//着地
 
-		s_Player.move.y *= -REFLECT_BOUND;
+		s_Player.nCounterJump++;
 
-		if (s_Player.move.y >= MAX_JUMP * powf(REFLECT_BOUND, MAX_BOUND))
-		{//バウンドが終わった
+		if (s_Player.nCounterJump >= 10)
+		{
+			s_Player.fHeight = PLAYER_HEIGHT;
+			s_Player.fWidth = PLAYER_WIDTH * 0.5f;
 			s_Player.jump = JUMPSTATE_NONE;
-			s_Player.move.y = 0.0f;
-			s_Player.nCounterJump = 0;
 		}
 
 		break;
@@ -585,9 +633,14 @@ static void UpdateBound(void)
 //--------------------------------------------------
 static void UpdateMotion(void)
 {
-	if (s_Player.attack == ATTACKSTATE_IN || s_Player.attack == ATTACKSTATE_STORE)
+	if (s_Player.attack == ATTACKSTATE_IN)
 	{//吸い込んでる
 		s_Player.fHeight = PLAYER_HEIGHT * 1.5f;
+	}
+	else if (s_Player.attack == ATTACKSTATE_STORE)
+	{//吸い込んだ
+		s_Player.nCounterMotion++;
+		s_Player.fHeight = (PLAYER_HEIGHT * 1.5f) + (sinf((s_Player.nCounterMotion * 0.01f) * (D3DX_PI * 2.0f)) * 5.0f);
 	}
 	else
 	{//吸い込んでいない
@@ -599,12 +652,11 @@ static void UpdateMotion(void)
 		switch (s_Player.jump)
 		{
 		case JUMPSTATE_NONE:		//何もしていない
-			s_Player.nCounterJump++;
-			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterJump * 0.01f) * (D3DX_PI * 2.0f)) * 5.0f);
+			s_Player.nCounterMotion++;
+			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterMotion * 0.01f) * (D3DX_PI * 2.0f)) * 5.0f);
 			break;
 
 		case JUMPSTATE_JUMP:		//ジャンプ
-		case JUMPSTATE_BOUND:		//バウンド
 
 			for (int i = 0; i < MAX_BLOCK; i++, pBlock++)
 			{
@@ -630,12 +682,19 @@ static void UpdateMotion(void)
 				}
 			}
 
-			if (s_Player.pos.y <= fPosY && s_Player.pos.y >= (fPosY - (SCREEN_HEIGHT / MAX_Y_BLOCK)))
-			{//下のブロックから１ブロック上の範囲なら
-				s_Player.nCounterJump++;
+			if (s_Player.pos.y <= (fPosY + ((SCREEN_HEIGHT / MAX_Y_BLOCK) * 2.0f)) && s_Player.pos.y >= (fPosY - ((SCREEN_HEIGHT / MAX_Y_BLOCK) * 2.0f)))
+			{//下のブロックから１ブロック上の範囲、落下中
+				s_Player.nCounterMotion++;
 			}
 
-			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterJump * 0.01f) * (D3DX_PI * 2.0f)) * 3.0f * -s_Player.move.y);
+			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterMotion * 0.04f) * (D3DX_PI * 2.0f)) * 15.0f);
+
+			break;
+
+		case JUMPSTATE_LAND:		//着地
+			s_Player.nCounterMotion++;
+			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterMotion * 0.04f) * (D3DX_PI * 2.0f)) * 15.0f);
+			s_Player.fWidth = PLAYER_WIDTH * 0.5f + (sinf((s_Player.nCounterMotion * 0.02f) * (D3DX_PI * 2.0f)) * 5.0f);
 
 			break;
 

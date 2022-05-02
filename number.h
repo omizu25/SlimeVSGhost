@@ -20,5 +20,6 @@ void SetNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber, int nD
 void TexNumber(int nNumber, int nDigit);
 void RankNumber(int nRank);
 void MoveNumber(D3DXVECTOR3 move, int nNumber, int nDigit, int nRank);
+void PosNumber(D3DXVECTOR3 pos, int nNumber, int nDigit, int nRank);
 
 #endif // !_NUMBER_H_

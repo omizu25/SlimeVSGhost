@@ -39,6 +39,8 @@
 //プロトタイプ宣言
 //--------------------------------------------------
 static void UpdateMove(void);
+static bool UpdateWherePos(void);
+static void UpdatePos(void);
 
 //--------------------------------------------------
 //スタティック変数
@@ -207,25 +209,14 @@ void InitRanking(void)
 	//コロンの初期化処理
 	InitColon();
 
-	if (s_nRankUpdate == -1)
-	{//Newがない
-		//位置を初期化する
-		s_pos = D3DXVECTOR3(900.0f, 175.0f, 0.0f);
+	//s_nRankUpdate = 1;
 
-		for (int i = 0; i < MAX_RANKING; i++)
-		{
-			s_move[i] = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-		}
-	}
-	else
-	{//Newがある
-		//位置を初期化する
-		s_pos = D3DXVECTOR3(2000.0f, 175.0f, 0.0f);
+	//位置を初期化する
+	s_pos = D3DXVECTOR3(2000.0f, 175.0f, 0.0f);
 
-		for (int i = 0; i < MAX_RANKING; i++)
-		{
-			s_move[i] = D3DXVECTOR3(-MAX_MOVE, 0.0f, 0.0f);
-		}
+	for (int i = 0; i < MAX_RANKING; i++)
+	{
+		s_move[i] = D3DXVECTOR3(-MAX_MOVE, 0.0f, 0.0f);
 	}
 
 	for (int i = 0; i < MAX_RANKING; i++)
@@ -241,14 +232,7 @@ void InitRanking(void)
 			aNumber[j] = nTime % 10;
 			nTime /= 10;
 
-			if (s_nRankUpdate == -1)
-			{//Newがない
-				fWidthInterval = (NUMBER_WIDTH * j) + (WIDTH_INTERVAL * (j / 2));
-			}
-			else
-			{//Newがある
-				fWidthInterval = (NUMBER_WIDTH * j) + (WIDTH_INTERVAL * (j / 2)) + (WIDTH_INTERVAL * i);
-			}
+			fWidthInterval = (NUMBER_WIDTH * j) + (WIDTH_INTERVAL * (j / 2)) + (WIDTH_INTERVAL * i);
 
 			//数の設定処理
 			SetNumber(s_pos + D3DXVECTOR3(-fWidthInterval, fHeightInterval, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, aNumber[j], j, i);
@@ -283,7 +267,7 @@ void InitRanking(void)
 		s_pVtxBuffRank->Unlock();
 
 		//数の設定処理
-		SetNumber(posRank + D3DXVECTOR3(-RANK_WIDTH, fHeightInterval, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, i + 1, 0, -1);
+		SetNumber(posRank + D3DXVECTOR3(-RANK_WIDTH, fHeightInterval, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, i + 1, 0, -2);
 	}
 
 	/* ↓New↓ */
@@ -394,19 +378,28 @@ void UpdateRanking(void)
 	if (GetKeyboardTrigger(DIK_RETURN) || GetKeyboardTrigger(DIK_B) ||
 		GetJoypadTrigger(JOYKEY_B))
 	{//決定キー(ENTERキー)が押されたかどうか
-		//フェードの設定
-		SetFade(MODE_TITLE);
+
+		//posがどこにいるのか処理
+		if (UpdateWherePos())
+		{//posが既定の位置にいる
+			//フェードの設定
+			SetFade(MODE_TITLE);
+		}
+		else
+		{//posが既定の位置にいない
+			//頂点処理
+			UpdatePos();
+		}
 	}
 
-	if (s_nRankUpdate != -1)
-	{//新しいスコアがある時
+	//移動処理
+	UpdateMove();
 
-		//移動処理
-		UpdateMove();
+	//頂点処理
+	UpdatePos();
 
-		//数のランク処理
-		RankNumber(s_nRankUpdate);
-	}
+	//数のランク処理
+	RankNumber(s_nRankUpdate);
 
 	//数の更新処理
 	UpdateNumber();
@@ -643,8 +636,6 @@ void InitRankUpdate(void)
 //--------------------------------------------------
 static void UpdateMove(void)
 {
-	VERTEX_2D *pVtx;		//頂点情報へのポインタ
-
 	//位置を更新
 	s_pos.x += s_move[s_nRankUpdate].x;
 
@@ -658,7 +649,42 @@ static void UpdateMove(void)
 			s_fWidth[i] = 900.0f;
 			s_move[i].x = 0.0f;
 		}
+	}
+}
 
+//--------------------------------------------------
+//posがどこにいるのか処理
+//--------------------------------------------------
+static bool UpdateWherePos(void)
+{
+	bool bWherePos = true;
+
+	for (int i = 0; i < MAX_RANKING; i++)
+	{//５位まで
+		if (s_fWidth[i] > 900.0f)
+		{//既定の値を越してない
+			bWherePos = false;
+		}
+
+		s_move[i].x = -(s_fWidth[i] - 900.0f);
+	}
+
+	if (!bWherePos)
+	{
+		//位置を更新
+		s_pos.x = 900.0f;
+	}
+
+	return bWherePos;
+}
+
+//--------------------------------------------------
+//頂点処理
+//--------------------------------------------------
+static void UpdatePos(void)
+{
+	for (int i = 0; i < MAX_RANKING; i++)
+	{//５位まで
 		int nTime = s_aScore[i];
 		int aNumber[MAX_TIME];
 		float fHeightInterval = (NUMBER_HEIGHT * i) + (HEIGHT_INTERVAL * i);
@@ -669,10 +695,10 @@ static void UpdateMove(void)
 			aNumber[j] = nTime % 10;
 			nTime /= 10;
 
-			fWidthInterval = (NUMBER_WIDTH * j) + (WIDTH_INTERVAL * (j / 2)) + (WIDTH_INTERVAL * i);
+			fWidthInterval = (NUMBER_WIDTH * j) + (WIDTH_INTERVAL * (j / 2));
 
-			//数の移動処理
-			MoveNumber(s_move[i], aNumber[j], j, i);
+			//数の頂点処理
+			PosNumber(D3DXVECTOR3(s_fWidth[i] - fWidthInterval, s_pos.y + fHeightInterval, 0.0f), aNumber[j], j, i);
 
 			if ((j % 2 == 0) && (j != 0))
 			{//２の倍数
@@ -683,6 +709,8 @@ static void UpdateMove(void)
 	}
 
 	/* ↓New↓ */
+
+	VERTEX_2D *pVtx;		//頂点情報へのポインタ
 
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuffNew->Lock(0, 0, (void**)&pVtx, 0);

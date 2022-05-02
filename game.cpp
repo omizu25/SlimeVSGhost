@@ -225,8 +225,12 @@ void DrawGame(void)
 
 	if (s_bPause)
 	{//ポーズ中
+#ifdef DEBUG
+
 		//ポーズの描画処理
 		DrawPause();
+
+#endif // DEBUG
 	}
 }
 

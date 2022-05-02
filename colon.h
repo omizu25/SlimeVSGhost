@@ -19,5 +19,6 @@ void DrawColon(void);
 void SetColon(D3DXVECTOR3 pos, float fWidth, float fHeight, int nRank);
 void RankColon(D3DXCOLOR col, int nRank);
 void MoveColon(D3DXVECTOR3 move, int nRank);
+void PosColon(D3DXVECTOR3 pos, int nRank);
 
 #endif // !_COLON_H_
