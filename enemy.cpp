@@ -7,8 +7,10 @@
 #include "block.h"
 #include "enemy.h"
 #include "game.h"
+#include "gauge.h"
 #include "item.h"
 #include "player.h"
+#include "result.h"
 #include "setup.h"
 
 #include <assert.h>
@@ -225,6 +227,14 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 		pEnemy->pos = pos;
 		pEnemy->type = type;
 		pEnemy->posOld = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+		pEnemy->state = ENEMYSTATE_NORMAL;
+		pEnemy->fWidth = ENEMY_WIDTH * 0.5f;
+		pEnemy->fHeight = ENEMY_HEIGHT;
+		pEnemy->nCounterState = 0;
+		pEnemy->nCounterAnim = 0;
+		pEnemy->nPatternAnim = 0;
+		pEnemy->nLife = 100;
+		pEnemy->bUse = true;		//使用している状態にする
 
 		switch (type)
 		{
@@ -234,6 +244,9 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 			pEnemy->bDirection = true;		//右向き
 			pEnemy->pop = ENEMYPOP_TOP;
 
+			//ゲージの設定処理
+			SetGauge(GAUGEUSE_BOY, pEnemy->nLife);
+
 			break;
 
 		case ENEMYTYPE_GIRL:		//女の子
@@ -242,21 +255,15 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 			pEnemy->bDirection = false;		//左向き
 			pEnemy->pop = ENEMYPOP_BOTTOM;
 
+			//ゲージの設定処理
+			SetGauge(GAUGEUSE_GIRL, pEnemy->nLife);
+
 			break;
 
 		default:
 			assert(false);
 			break;
 		}
-		
-		pEnemy->state = ENEMYSTATE_NORMAL;
-		pEnemy->fWidth = ENEMY_WIDTH * 0.5f;
-		pEnemy->fHeight = ENEMY_HEIGHT;
-		pEnemy->nCounterState = 0;
-		pEnemy->nCounterAnim = 0;
-		pEnemy->nPatternAnim = 0;
-		pEnemy->nLife = 100;
-		pEnemy->bUse = true;		//使用している状態にする
 
 		VERTEX_2D *pVtx;		//頂点情報へのポインタ
 
@@ -268,8 +275,11 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 		//頂点座標の設定処理
 		SetBottompos(pVtx, pos, pEnemy->fWidth, pEnemy->fHeight);
 
+		float fPattren = (float)pEnemy->nPatternAnim / MAX_U_PATTERN;
+		float fDirection = (float)pEnemy->bDirection / MAX_V_PATTERN;
+
 		//テクスチャ座標の設定処理
-		Settex(pVtx, 0.01f, (1.0f / MAX_U_PATTERN) - 0.01f, 0.01f, 1.0f / MAX_V_PATTERN);
+		Settex(pVtx, fPattren + 0.01f, (fPattren + (1.0f / MAX_U_PATTERN)) - 0.01f, fDirection + 0.01f, fDirection + (1.0f / MAX_V_PATTERN));
 
 		//頂点バッファをアンロックする
 		s_pVtxBuff->Unlock();
@@ -298,18 +308,48 @@ void HitEnemy(int nCntEnemy, int nDamage)
 
 	pEnemy->nLife -= nDamage;
 
+	switch (pEnemy->type)
+	{
+	case ENEMYTYPE_BOY:			//男の子
+
+		//ゲージの減算処理
+		SubGauge(GAUGEUSE_BOY, pEnemy->nLife);
+
+		break;
+
+	case ENEMYTYPE_GIRL:		//女の子
+
+		//ゲージの減算処理
+		SubGauge(GAUGEUSE_GIRL, pEnemy->nLife);
+
+		break;
+
+	default:
+		assert(false);
+		break;
+	}
+
 	if (pEnemy->nLife <= 0)
 	{//敵の体力がなくなった
 		pEnemy->bUse = false;		//使用していない状態にする
 
+		int nUse = 0;
+
 		for (int i = 0; i < ENEMYTYPE_MAX; i++)
 		{
 			if (s_aEnemy[i].bUse)
-			{//敵が１体以上使用されている
-				break;
+			{//敵が使用されている
+				continue;
 			}
 
-			//敵が１体も使用されていない
+			//敵が使用されていない
+			nUse++;
+		}
+
+		if (nUse >= ENEMYTYPE_MAX)
+		{//全員使用されていない
+			//リザルトの設定処理
+			SetResult(RESULT_WIN);
 
 			//ゲームの設定処理
 			SetGameState(GAMESTATE_END);

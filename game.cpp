@@ -9,10 +9,12 @@
 #include "enemy.h"
 #include "fade.h"
 #include "game.h"
+#include "gauge.h"
 #include "input.h"
 #include "item.h"
 #include "pause.h"
 #include "player.h"
+#include "result.h"
 
 #include <assert.h>
 
@@ -39,6 +41,9 @@ void InitGame(void)
 	//背景の初期化処理
 	InitBG();
 
+	//ゲージの初期化処理
+	InitGauge();
+
 	//ブロックの初期化処理
 	InitBlock();
 
@@ -48,7 +53,7 @@ void InitGame(void)
 	//敵の初期化処理
 	InitEnemy();
 
-	//色々な設定処理
+	//ポップ処理
 	SetPop();
 
 	//プレイヤーの初期化処理
@@ -59,6 +64,9 @@ void InitGame(void)
 	s_nCounterState = 0;				//カウンターの初期化
 
 	s_bPause = false;					//ポーズ解除
+
+	//リザルトの設定処理
+	SetResult(RESULT_NONE);
 }
 
 //--------------------------------------------------
@@ -83,6 +91,9 @@ void UninitGame(void)
 
 	//プレイヤーの終了処理
 	UninitPlayer();
+
+	//ゲージの終了処理
+	UninitGauge();
 }
 
 //--------------------------------------------------
@@ -123,9 +134,16 @@ void UpdateGame(void)
 			//プレイヤーの更新処理
 			UpdatePlayer();
 
+			//ゲージの更新処理
+			UpdateGauge();
+
 			break;
 
 		case GAMESTATE_END:			//終了状態
+
+			//ゲージの更新処理
+			UpdateGauge();
+
 			s_nCounterState++;
 
 			if (s_nCounterState >= 45)
@@ -170,6 +188,9 @@ void DrawGame(void)
 	//プレイヤーの描画処理
 	DrawPlayer();
 
+	//ゲージの描画処理
+	DrawGauge();
+
 	if (s_bPause)
 	{//ポーズ中
 		//ポーズの描画処理
@@ -196,7 +217,7 @@ void SetEnablePause(bool bPause)
 }
 
 //--------------------------------------------------
-//色々な設定処理
+//ポップ処理
 //--------------------------------------------------
 static void SetPop(void)
 {

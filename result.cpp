@@ -1,6 +1,6 @@
 //--------------------------------------------------
 //
-// STG制作 ( result.cpp )
+// ACG制作 ( result.cpp )
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
@@ -9,25 +9,37 @@
 #include "result.h"
 #include "setup.h"
 
-//-------------------------
+//--------------------------------------------------
 //スタティック変数
-//-------------------------
-static LPDIRECT3DTEXTURE9			s_pTexture = NULL;		//テクスチャへのポインタ
-static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;		//頂点バッファのポインタ
+//--------------------------------------------------
+static LPDIRECT3DTEXTURE9			s_pTexture[RESULT_MAX];		//テクスチャへのポインタ
+static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;			//頂点バッファのポインタ
+static RESULT						s_Result;					//リザルトの情報
 
-//-------------------------
+//--------------------------------------------------
 //リザルトの初期化処理
-//-------------------------
+//--------------------------------------------------
 void InitResult(void)
 {
 	//デバイスへのポインタの取得
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
+	for (int i = 0; i < RESULT_MAX; i++)
+	{//メモリのクリア
+		memset(&s_pTexture[i], NULL, sizeof(LPDIRECT3DTEXTURE9));
+	}
+
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\result000.png",
-		&s_pTexture);
+		&s_pTexture[RESULT_LOSE]);
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\result003.png",
+		&s_pTexture[RESULT_WIN]);
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -63,15 +75,18 @@ void InitResult(void)
 	s_pVtxBuff->Unlock();
 }
 
-//-------------------------
+//--------------------------------------------------
 //リザルトの終了処理
-//-------------------------
+//--------------------------------------------------
 void UninitResult(void)
 {
-	if (s_pTexture != NULL)
-	{//テクスチャの破棄
-		s_pTexture->Release();
-		s_pTexture = NULL;
+	for (int i = 0; i < RESULT_MAX; i++)
+	{
+		if (s_pTexture[i] != NULL)
+		{//テクスチャの破棄
+			s_pTexture[i]->Release();
+			s_pTexture[i] = NULL;
+		}
 	}
 
 	if (s_pVtxBuff != NULL)
@@ -81,9 +96,9 @@ void UninitResult(void)
 	}
 }
 
-//-------------------------
+//--------------------------------------------------
 //リザルトの更新処理
-//-------------------------
+//--------------------------------------------------
 void UpdateResult(void)
 {
 	if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
@@ -93,9 +108,9 @@ void UpdateResult(void)
 	}
 }
 
-//-------------------------
+//--------------------------------------------------
 //リザルトの描画処理
-//-------------------------
+//--------------------------------------------------
 void DrawResult(void)
 {
 	LPDIRECT3DDEVICE9 pDevice;		//デバイスへのポインタ
@@ -110,11 +125,22 @@ void DrawResult(void)
 	pDevice->SetFVF(FVF_VERTEX_2D);
 
 	//テクスチャの設定
-	pDevice->SetTexture(0, s_pTexture);
+	pDevice->SetTexture(0, s_pTexture[s_Result]);
 	
 	//ポリゴンの描画
 	pDevice->DrawPrimitive(
 		D3DPT_TRIANGLESTRIP,		//プリミティブの種類
 		0,							//描画する最初の頂点インデックス
 		2);							//プリミティブ(ポリゴン)数
+}
+
+//--------------------------------------------------
+//リザルトの設定
+//--------------------------------------------------
+void SetResult(RESULT Result)
+{
+	if (s_Result == RESULT_NONE || Result == RESULT_NONE)
+	{//まだリザルトが決まってない、リザルトの初期化
+		s_Result = Result;		//リザルトを代入
+	}
 }

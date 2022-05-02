@@ -77,7 +77,7 @@ void InitItem(void)
 	//アイテムの情報の初期化設定
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
-		Item *pItem = &s_aItem[i];		//アイテムの情報
+		Item *pItem = &s_aItem[i];
 
 		//構造体の初期化処理
 		InitStruct(pItem);
@@ -241,7 +241,10 @@ void SetItem(D3DXVECTOR3 pos, ITEMTYPE type, bool bDirection)
 				pItem->move = D3DXVECTOR3(-STER_MOVE, 0.0f, 0.0f);
 			}
 
+			break;
+
 		default:
+			assert(false);
 			break;
 		}
 
@@ -286,10 +289,12 @@ void CollisionItem(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove, 
 			if ((pPosOld->x + fWidth <= fLeft) && (pPos->x + fWidth > fLeft))
 			{//アイテムの左端
 				pItem->pos.x = pPos->x + fWidth + pItem->fWidth;
+				pItem->move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 			}
 			else if ((pPosOld->x - fWidth >= fRight) && (pPos->x - fWidth < fRight))
 			{//アイテムの右端
 				pItem->pos.x = pPos->x - fWidth - pItem->fWidth;
+				pItem->move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 			}
 		}
 	}
@@ -411,6 +416,28 @@ static void UpdateCollision(Item *pItem)
 			//敵のヒット処理
 			HitEnemy(i, 10);
 
+			pItem->bUse = false;		//使用していない状態にする
+		}
+	}
+
+	for (int i = 0; i < MAX_ITEM; i++)
+	{
+		s_aItem[i];		//アイテムの情報
+
+		if (!s_aItem[i].bUse || s_aItem[i].type == ITEMTYPE_STAR)
+		{//アイテムが使用されていない、指定の種類じゃない
+			continue;
+		}
+
+		//アイテムが使用されている、指定の種類
+
+		if (pItem->pos.y <= (s_aItem[i].pos.y + s_aItem[i].fHeight - pItem->fHeight) &&
+			pItem->pos.y >= (s_aItem[i].pos.y - s_aItem[i].fHeight - pItem->fHeight) &&
+			pItem->pos.x <= (s_aItem[i].pos.x + s_aItem[i].fWidth + pItem->fWidth) &&
+			pItem->pos.x >= (s_aItem[i].pos.x - s_aItem[i].fWidth - pItem->fWidth) &&
+			pItem->type == ITEMTYPE_STAR)
+		{//ブロックにスターが当たった時
+			s_aItem[i].bUse = false;		//使用していない状態にする
 			pItem->bUse = false;		//使用していない状態にする
 		}
 	}

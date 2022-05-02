@@ -15,8 +15,9 @@
 typedef enum
 {
 	FADE_NONE = 0,		//何もしていない状態
-	FADE_IN,			//フェードイン(見える)
 	FADE_OUT,			//フェードアウト(見えない)
+	FADE_IN,			//フェードイン(見える)
+	FADE_SKIP,			//フェードスキップ
 	FADE_MAX
 }FADE;
 

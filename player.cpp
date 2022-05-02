@@ -6,9 +6,11 @@
 //--------------------------------------------------
 #include "block.h"
 #include "game.h"
+#include "gauge.h"
 #include "input.h"
 #include "item.h"
 #include "player.h"
+#include "result.h"
 #include "setup.h"
 
 #include <assert.h>
@@ -97,6 +99,9 @@ void InitPlayer(void)
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
+
+	//ゲージの設定処理
+	SetGauge(GAUGEUSE_PLAYER, s_Player.nLife);
 }
 
 //--------------------------------------------------
@@ -188,7 +193,6 @@ void DrawPlayer(void)
 		break;
 	}
 	
-
 	//テクスチャの設定
 	if (s_bTexUse)
 	{//使用する
@@ -226,8 +230,14 @@ void HitPlayer(int nDamage)
 	{
 		s_Player.nLife -= nDamage;
 
+		//ゲージの減算処理
+		SubGauge(GAUGEUSE_PLAYER, s_Player.nLife);
+
 		if (s_Player.nLife <= 0)
 		{//プレイヤーの体力がなくなった
+			//リザルトの設定処理
+			SetResult(RESULT_LOSE);
+
 			//ゲームの設定処理
 			SetGameState(GAMESTATE_END);
 		}
