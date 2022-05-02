@@ -5,14 +5,26 @@
 //
 //--------------------------------------------------
 #include "bg.h"
+#include "block.h"
 #include "input.h"
 #include "player.h"
 #include "setup.h"
 
 //--------------------------------------------------
+//マクロ定義
+//--------------------------------------------------
+#define MAX_BG		(2)		//背景の最大数
+
+//--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;		//頂点バッファのポインタ
+static BG							s_aBG[MAX_BG];			//背景の情報
+
+//--------------------------------------------------
+//プロトタイプ宣言
+//--------------------------------------------------
+static void InitStruct(int i);
 
 //--------------------------------------------------
 //背景の初期化処理
@@ -24,7 +36,7 @@ void InitBG(void)
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
-		sizeof(VERTEX_2D) * 4,
+		sizeof(VERTEX_2D) * 4 * MAX_BG,
 		D3DUSAGE_WRITEONLY,
 		FVF_VERTEX_2D,
 		D3DPOOL_MANAGED,
@@ -36,21 +48,33 @@ void InitBG(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
-	float fWidth = SCREEN_WIDTH * 0.5f;
-	float fHeight = SCREEN_HEIGHT * 0.5f;
-	D3DXVECTOR3 pos = D3DXVECTOR3(fWidth, fHeight, 0.0f);
+	for (int i = 0; i < MAX_BG; i++)
+	{
+		//構造体の初期化処理
+		InitStruct(i);
 
-	//頂点座標の設定処理
-	SetMiddlepos(pVtx, pos, fWidth, fHeight);
+		//頂点座標の設定処理
+		SetMiddlepos(pVtx, s_aBG[i].pos, s_aBG[i].fWidth, s_aBG[i].fHeight);
 
-	//rhwの初期化処理
-	Initrhw(pVtx);
+		//rhwの初期化処理
+		Initrhw(pVtx);
 
-	//頂点カラーの設定処理
-	Setcol(pVtx, 1.0f, 1.0f, 0.5f, 1.0f);
+		if (i == 0)
+		{
+			//頂点カラーの設定処理
+			Setcol(pVtx, 1.0f, 1.0f, 0.5f, 1.0f);
+		}
+		else
+		{
+			//頂点カラーの設定処理
+			Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
+		}
 
-	//テクスチャの初期化処理
-	Inittex(pVtx);
+		//テクスチャの初期化処理
+		Inittex(pVtx);
+
+		pVtx += 4;		//頂点データのポインタを４つ分進め
+	}
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
@@ -83,7 +107,7 @@ void DrawBG(void)
 {
 	//デバイスへのポインタの取得
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
-
+	
 	//頂点バッファをデータストリームに設定
 	pDevice->SetStreamSource(0, s_pVtxBuff, 0, sizeof(VERTEX_2D));
 
@@ -93,9 +117,34 @@ void DrawBG(void)
 	//テクスチャの設定
 	pDevice->SetTexture(0, NULL);
 
-	//ポリゴンの描画
-	pDevice->DrawPrimitive(
-		D3DPT_TRIANGLESTRIP,		//プリミティブの種類
-		0,							//描画する最初の頂点インデックス
-		2);							//プリミティブ(ポリゴン)数
+	for (int i = 0; i < MAX_BG; i++)
+	{
+		//ポリゴンの描画
+		pDevice->DrawPrimitive(
+			D3DPT_TRIANGLESTRIP,		//プリミティブの種類
+			i * 4,						//描画する最初の頂点インデックス
+			2);							//プリミティブ(ポリゴン)数
+	}
+}
+
+//--------------------------------------------------
+//構造体の初期化処理
+//--------------------------------------------------
+static void InitStruct(int i)
+{
+	float fWidth = SCREEN_WIDTH * 0.5f;
+	float fHeight;
+
+	if (i == 0)
+	{
+		fHeight = SCREEN_HEIGHT * 0.5f;
+	}
+	else
+	{
+		fHeight = SCREEN_HEIGHT / MAX_Y_BLOCK;
+	}
+	
+	s_aBG[i].pos = D3DXVECTOR3(fWidth, fHeight, 0.0f);
+	s_aBG[i].fWidth = fWidth;
+	s_aBG[i].fHeight = fHeight;
 }

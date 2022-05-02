@@ -266,7 +266,7 @@ Item *GetItem(void)
 //--------------------------------------------------
 //アイテムの当たり判定処理
 //--------------------------------------------------
-void CollisionItem(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove, float fWidth, float fHeight)
+void CollisionItem(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, float fWidth, float fHeight)
 {
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
@@ -390,7 +390,7 @@ static void UpdateCollision(Item *pItem)
 	{//プレイヤーにブロックが当たった時
 
 		//プレイヤーのヒット処理
-		HitPlayer(5);
+		HitPlayer(10);
 
 		pItem->bUse = false;		//使用していない状態にする
 	}

@@ -39,6 +39,16 @@ void SetLeftpos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
 	pVtx[3].pos = pos + D3DXVECTOR3(fWidth,  fHeight, 0.0f);
 }
 
+//--------------------------------------------------
+//頂点座標の設定処理 (右に中心)
+//--------------------------------------------------
+void SetRightpos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
+{
+	pVtx[0].pos = pos + D3DXVECTOR3(-fWidth, -fHeight, 0.0f);
+	pVtx[1].pos = pos + D3DXVECTOR3(   0.0f, -fHeight, 0.0f);
+	pVtx[2].pos = pos + D3DXVECTOR3(-fWidth,  fHeight, 0.0f);
+	pVtx[3].pos = pos + D3DXVECTOR3(   0.0f,  fHeight, 0.0f);
+}
 
 //--------------------------------------------------
 //頂点カラーの設定処理

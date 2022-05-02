@@ -13,22 +13,25 @@
 //--------------------------------------------------
 //マクロ定義
 //--------------------------------------------------
-#define MAX_GAUGE			(256)			//ゲージの最大数
-#define GAUGE_WIDTH			(3.0f)			//ゲージの幅
+#define MAX_GAUGE			(32)			//ゲージの最大数
+#define GAUGE_WIDTH			(2.0f)			//ゲージの幅
 
 //--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
-static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;		//頂点バッファのポインタ
-static Gauge						s_Gauge[MAX_GAUGE];		//ゲージの情報
+static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;			//頂点バッファのポインタ
+static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuffFrame = NULL;		//フレームの頂点バッファのポインタ
+static Gauge						s_Gauge[MAX_GAUGE];			//ゲージの情報
+static GaugeFrame					s_Frame[MAX_GAUGE];			//フレームの情報
 
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
-static void SetRightpos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight);
-static void InitStruct(Gauge *pGauge);
+static void InitGaugeStruct(Gauge *pGauge);
+static void InitFrameStruct(GaugeFrame *pFrame);
 static void SetPos(VERTEX_2D *pVtx, Gauge *pGauge);
 static void SetCol(VERTEX_2D *pVtx, Gauge *pGauge);
+static void SetFrame(Gauge *pGauge);
 static void UpdateDecrease(void);
 
 //--------------------------------------------------
@@ -48,6 +51,15 @@ void InitGauge(void)
 		&s_pVtxBuff,
 		NULL);
 
+	//頂点バッファの生成
+	pDevice->CreateVertexBuffer(
+		sizeof(VERTEX_2D) * 4 * MAX_GAUGE,
+		D3DUSAGE_WRITEONLY,
+		FVF_VERTEX_2D,
+		D3DPOOL_MANAGED,
+		&s_pVtxBuffFrame,
+		NULL);
+
 	VERTEX_2D *pVtx;		//頂点情報へのポインタ
 
 	//頂点情報をロックし、頂点情報へのポインタを取得
@@ -57,8 +69,8 @@ void InitGauge(void)
 	{
 		Gauge *pGauge = &s_Gauge[i];
 
-		//構造体の初期化処理
-		InitStruct(pGauge);
+		//ゲージの構造体の初期化処理
+		InitGaugeStruct(pGauge);
 
 		//全ての初期化処理
 		InitAll(pVtx);
@@ -68,6 +80,25 @@ void InitGauge(void)
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
+
+	//頂点情報をロックし、頂点情報へのポインタを取得
+	s_pVtxBuffFrame->Lock(0, 0, (void**)&pVtx, 0);
+
+	for (int i = 0; i < MAX_GAUGE; i++)
+	{
+		GaugeFrame *pFrame = &s_Frame[i];
+
+		//構造体の初期化処理
+		InitFrameStruct(pFrame);
+
+		//全ての初期化処理
+		InitAll(pVtx);
+
+		pVtx += 4;		//頂点データのポインタを４つ分進め
+	}
+
+	//頂点バッファをアンロックする
+	s_pVtxBuffFrame->Unlock();
 }
 
 //--------------------------------------------------
@@ -125,6 +156,27 @@ void DrawGauge(void)
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
 	//頂点バッファをデータストリームに設定
+	pDevice->SetStreamSource(0, s_pVtxBuffFrame, 0, sizeof(VERTEX_2D));
+
+	//頂点フォーマットの設定
+	pDevice->SetFVF(FVF_VERTEX_2D);
+
+	//テクスチャの設定
+	pDevice->SetTexture(0, NULL);
+
+	for (int i = 0; i < MAX_GAUGE; i++)
+	{
+		if (s_Frame[i].bUse)
+		{//フレームが使用されている
+		 //ポリゴンの描画
+			pDevice->DrawPrimitive(
+				D3DPT_TRIANGLESTRIP,		//プリミティブの種類
+				i * 4,						//描画する最初の頂点インデックス
+				2);							//プリミティブ(ポリゴン)数
+		}
+	}
+
+	//頂点バッファをデータストリームに設定
 	pDevice->SetStreamSource(0, s_pVtxBuff, 0, sizeof(VERTEX_2D));
 
 	//頂点フォーマットの設定
@@ -170,7 +222,7 @@ void SetGauge(GAUGEUSE use, int nLife)
 			pGauge->nCounter = 0;
 			pGauge->fWidth = GAUGE_WIDTH * nLife;
 
-			float fWidth = (SCREEN_WIDTH / MAX_X_BLOCK);
+			float fWidth = SCREEN_WIDTH / MAX_X_BLOCK;
 			float fHeight = (SCREEN_HEIGHT / MAX_Y_BLOCK) * 0.5f;
 
 			pGauge->fHeight = fHeight;
@@ -179,14 +231,14 @@ void SetGauge(GAUGEUSE use, int nLife)
 			{
 			case GAUGEUSE_PLAYER:		//プレイヤー
 
-				pGauge->pos = D3DXVECTOR3(fWidth * 2.5f, fHeight * 2.0f, 0.0f);
+				pGauge->pos = D3DXVECTOR3(fWidth * (MAX_X_BLOCK * 0.093f), fHeight * 2.0f, 0.0f);
 
 				break;
 
 			case GAUGEUSE_BOY:			//男の子 (リリ)
 			case GAUGEUSE_GIRL:			//女の子 (ルル)
 
-				pGauge->pos = D3DXVECTOR3(fWidth * 21.5f, fHeight * 2.0f, 0.0f);
+				pGauge->pos = D3DXVECTOR3(fWidth * (MAX_X_BLOCK * 0.5f), fHeight * 2.0f, 0.0f);
 
 				break;
 
@@ -210,6 +262,12 @@ void SetGauge(GAUGEUSE use, int nLife)
 
 			//頂点バッファをアンロックする
 			s_pVtxBuff->Unlock();
+
+			if ((GAUGETYPE)i == GAUGETYPE_MAXIMUM)
+			{//指定の種類の時
+				//フレームの設定処理
+				SetFrame(pGauge);
+			}
 
 			break;		//ここでfor文を抜ける
 		}
@@ -252,20 +310,9 @@ void SubGauge(GAUGEUSE use, int nLife)
 }
 
 //--------------------------------------------------
-//頂点座標の設定処理 (右に中心)
+//ゲージの構造体の初期化処理
 //--------------------------------------------------
-static void SetRightpos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
-{
-	pVtx[0].pos = pos + D3DXVECTOR3(-fWidth, -fHeight, 0.0f);
-	pVtx[1].pos = pos + D3DXVECTOR3(   0.0f, -fHeight, 0.0f);
-	pVtx[2].pos = pos + D3DXVECTOR3(-fWidth,  fHeight, 0.0f);
-	pVtx[3].pos = pos + D3DXVECTOR3(   0.0f,  fHeight, 0.0f);
-}
-
-//--------------------------------------------------
-//構造体の初期化処理
-//--------------------------------------------------
-static void InitStruct(Gauge *pGauge)
+static void InitGaugeStruct(Gauge *pGauge)
 {
 	pGauge->pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	pGauge->use = GAUGEUSE_PLAYER;
@@ -274,6 +321,18 @@ static void InitStruct(Gauge *pGauge)
 	pGauge->fHeight = 0.0f;
 	pGauge->nCounter = 0;
 	pGauge->bUse = false;
+}
+
+//--------------------------------------------------
+//フレームの構造体の初期化処理
+//--------------------------------------------------
+static void InitFrameStruct(GaugeFrame *pFrame)
+{
+	pFrame->pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	pFrame->use = GAUGEUSE_PLAYER;
+	pFrame->fWidth = 0.0f;
+	pFrame->fHeight = 0.0f;
+	pFrame->bUse = false;
 }
 
 //--------------------------------------------------
@@ -314,7 +373,7 @@ static void SetCol(VERTEX_2D *pVtx, Gauge *pGauge)
 	case GAUGETYPE_MAXIMUM:			//最大値
 
 		//頂点カラーの設定処理
-		Setcol(pVtx, 0.3f, 0.3f, 0.3f, 1.0f);
+		Setcol(pVtx, 0.5f, 0.5f, 0.5f, 1.0f);
 
 		break;
 
@@ -332,15 +391,21 @@ static void SetCol(VERTEX_2D *pVtx, Gauge *pGauge)
 		case GAUGEUSE_PLAYER:		//プレイヤー
 
 			//頂点カラーの設定処理
-			Setcol(pVtx, 1.0f, 0.0f, 1.0f, 1.0f);
+			Setcol(pVtx, 0.0f, 1.0f, 0.0f, 1.0f);
 
 			break;
 
 		case GAUGEUSE_BOY:			//男の子 (リリ)
+
+			//頂点カラーの設定処理
+			Setcol(pVtx, 0.0f, 0.0f, 1.0f, 1.0f);
+
+			break;
+
 		case GAUGEUSE_GIRL:			//女の子 (ルル)
 
 			//頂点カラーの設定処理
-			Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
+			Setcol(pVtx, 1.0f, 0.3f, 0.75f, 1.0f);
 
 			break;
 
@@ -353,6 +418,69 @@ static void SetCol(VERTEX_2D *pVtx, Gauge *pGauge)
 
 	default:
 		assert(false);
+		break;
+	}
+}
+
+//--------------------------------------------------
+//フレームの設定処理
+//--------------------------------------------------
+static void SetFrame(Gauge *pGauge)
+{
+	for (int i = 0; i < MAX_GAUGE; i++)
+	{
+		GaugeFrame *pFrame = &s_Frame[i];
+
+		if (pFrame->bUse)
+		{//フレームが使用されている
+			continue;
+		}
+
+		assert(i <= 3);
+
+		//フレームが使用されていない
+
+		switch (pGauge->use)
+		{
+		case GAUGEUSE_PLAYER:		//プレイヤー
+		case GAUGEUSE_GIRL:			//女の子 (ルル)
+
+			pFrame->pos = D3DXVECTOR3(pGauge->pos.x + (pGauge->fWidth * 0.5f), pGauge->pos.y, 0.0f);
+
+			break;
+
+		case GAUGEUSE_BOY:			//男の子 (リリ)
+
+			pFrame->pos = D3DXVECTOR3(pGauge->pos.x - (pGauge->fWidth * 0.5f), pGauge->pos.y, 0.0f);
+
+			break;
+
+		default:
+			assert(false);
+			break;
+		}
+
+		pFrame->use = pGauge->use;
+		pFrame->fWidth = pGauge->fWidth * 0.51f;
+		pFrame->fHeight = pGauge->fHeight * 1.2f;
+		pFrame->bUse = true;
+
+		VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+		//頂点情報をロックし、頂点情報へのポインタを取得
+		s_pVtxBuffFrame->Lock(0, 0, (void**)&pVtx, 0);
+
+		pVtx += (i * 4);		//該当の位置まで進める
+
+		//頂点座標の設定処理
+		SetMiddlepos(pVtx, pFrame->pos, pFrame->fWidth, pFrame->fHeight);
+
+		//頂点カラーの設定処理
+		Setcol(pVtx, 0.0f, 0.0f, 0.0f, 1.0f);
+
+		//頂点バッファをアンロックする
+		s_pVtxBuffFrame->Unlock();
+
 		break;
 	}
 }
@@ -401,7 +529,7 @@ static void UpdateDecrease(void)
 				pDecrease->fWidth -= Difference * 0.0075f;
 
 				if (Difference <= 0.5f)
-				{
+				{//差が小さくなったら
 					pDecrease->nCounter = 0;
 					pDecrease->fWidth = pRemaining->fWidth;
 				}

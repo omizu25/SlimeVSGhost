@@ -483,7 +483,7 @@ static void DrawDebug(void)
 
 
 	//テキストの描画
-	s_pFont->DrawText(NULL, &aStr[0], -1, &rect, DT_LEFT, D3DCOLOR_RGBA(0, 255, 255, 255));
+	s_pFont->DrawText(NULL, &aStr[0], -1, &rect, DT_LEFT, D3DCOLOR_RGBA(0, 0, 0, 255));
 }
 
 //--------------------------------------------------

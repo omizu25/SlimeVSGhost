@@ -374,8 +374,6 @@ bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove,
 //--------------------------------------------------
 void CollisionTopBlock(D3DXVECTOR3 *pPos, float fWidth, float fHeight)
 {
-	int nCntTop = 0;
-
 	for (int i = 0; i < MAX_BLOCK; i++)
 	{
 		Block *pBlock = &s_aBlock[i];		//ƒuƒƒbƒN‚Ìî•ñ

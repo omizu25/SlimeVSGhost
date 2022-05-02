@@ -149,7 +149,7 @@ void UpdateEnemy(void)
 		UpdateStop(pEnemy);
 
 		//アイテムの当たり判定処理
-		CollisionItem(&pEnemy->pos, &pEnemy->posOld, &pEnemy->move, pEnemy->fWidth, pEnemy->fHeight);
+		CollisionItem(&pEnemy->pos, &pEnemy->posOld, pEnemy->fWidth, pEnemy->fHeight);
 
 		//画面外処理
 		UpdateOffScreen(pEnemy);

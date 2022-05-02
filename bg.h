@@ -10,21 +10,14 @@
 #include "main.h"
 
 //-------------------------
-//マクロ定義
+//背景の構造体を定義
 //-------------------------
-#define MOVE_BG		(3)		//動く背景の数
-#define NUM_BG		(2)		//背景の種類
-
-//-------------------------
-//ゲームの状態
-//-------------------------
-typedef enum
+typedef struct
 {
-	BATTLEBG_NORMAL = 0,		//通常戦
-	BATTLEBG_BOSS,				//ボス戦
-	BATTLEBG_APPEAR,			//出現状態
-	BATTLEBG_MAX
-}BATTLEBG;
+	D3DXVECTOR3		pos;			//位置
+	float			fWidth;			//幅
+	float			fHeight;		//高さ
+}BG;
 
 //-------------------------
 //プロトタイプ宣言
@@ -33,7 +26,5 @@ void InitBG(void);
 void UninitBG(void);
 void UpdateBG(void);
 void DrawBG(void);
-void SetBG(BATTLEBG battle);
-BATTLEBG GetBG(void);
 
 #endif // !_BG_H_

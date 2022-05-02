@@ -15,6 +15,7 @@
 #include "pause.h"
 #include "player.h"
 #include "result.h"
+#include "time.h"
 
 #include <assert.h>
 
@@ -43,6 +44,9 @@ void InitGame(void)
 
 	//ゲージの初期化処理
 	InitGauge();
+
+	//タイムの初期化
+	InitTime();
 
 	//ブロックの初期化処理
 	InitBlock();
@@ -94,6 +98,9 @@ void UninitGame(void)
 
 	//ゲージの終了処理
 	UninitGauge();
+
+	//タイムの終了処理
+	UninitTime();
 }
 
 //--------------------------------------------------
@@ -136,6 +143,9 @@ void UpdateGame(void)
 
 			//ゲージの更新処理
 			UpdateGauge();
+
+			//タイムの更新処理
+			UpdateTime();
 
 			break;
 
@@ -190,6 +200,9 @@ void DrawGame(void)
 
 	//ゲージの描画処理
 	DrawGauge();
+
+	//タイムの描画処理
+	DrawTime();
 
 	if (s_bPause)
 	{//ポーズ中
