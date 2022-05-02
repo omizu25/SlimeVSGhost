@@ -48,6 +48,7 @@ void UpdateItem(void);
 void DrawItem(void);
 void SetItem(D3DXVECTOR3 pos, ITEMTYPE type, bool bDirection);
 Item *GetItem(void);
+bool GetDeath(void);
 void CollisionItem(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, float fWidth, float fHeight);
 void InhaleItem(D3DXVECTOR3 pos, ATTACKSTATE *pAttack, float fWidth, float fHeight, bool bDirection);
 

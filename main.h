@@ -37,7 +37,7 @@
 typedef enum
 {
 	MODE_TITLE = 0,		//タイトル
-	MODE_RULE,			//ルール
+	MODE_TUTORIAL,		//チュートリアル
 	MODE_GAME,			//ゲーム
 	MODE_RESULT,		//リザルト
 	MODE_RANKING,		//ランキング

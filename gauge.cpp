@@ -13,8 +13,8 @@
 //--------------------------------------------------
 //マクロ定義
 //--------------------------------------------------
-#define MAX_GAUGE			(32)			//ゲージの最大数
-#define GAUGE_WIDTH			(2.5f)			//ゲージの幅
+#define MAX_GAUGE			(32)		//ゲージの最大数
+#define GAUGE_WIDTH			(2.5f)		//ゲージの幅
 
 //--------------------------------------------------
 //スタティック変数
@@ -27,7 +27,6 @@ static GaugeFrame					s_Frame[MAX_GAUGE];			//フレームの情報
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
-static void InitGaugeStruct(Gauge *pGauge);
 static void InitFrameStruct(GaugeFrame *pFrame);
 static void SetPos(VERTEX_2D *pVtx, Gauge *pGauge);
 static void SetCol(VERTEX_2D *pVtx, Gauge *pGauge);
@@ -65,13 +64,11 @@ void InitGauge(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
+	//メモリのクリア
+	memset(&s_Gauge[0], NULL, sizeof(s_Gauge));
+
 	for (int i = 0; i < MAX_GAUGE; i++)
 	{
-		Gauge *pGauge = &s_Gauge[i];
-
-		//ゲージの構造体の初期化処理
-		InitGaugeStruct(pGauge);
-
 		//全ての初期化処理
 		InitAll(pVtx);
 
@@ -84,13 +81,11 @@ void InitGauge(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuffFrame->Lock(0, 0, (void**)&pVtx, 0);
 
+	//メモリのクリア
+	memset(&s_Frame[0], NULL, sizeof(s_Frame));
+
 	for (int i = 0; i < MAX_GAUGE; i++)
 	{
-		GaugeFrame *pFrame = &s_Frame[i];
-
-		//構造体の初期化処理
-		InitFrameStruct(pFrame);
-
 		//全ての初期化処理
 		InitAll(pVtx);
 

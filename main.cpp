@@ -7,11 +7,13 @@
 #include "fade.h"
 #include "game.h"
 #include "input.h"
+#include "item.h"
 #include "main.h"
 #include "player.h"
 #include "ranking.h"
 #include "result.h"
 #include "title.h"
+#include "tutorial.h"
 
 #include <assert.h>
 
@@ -319,6 +321,9 @@ static void Uninit(void)
 	//タイトルの終了処理
 	UninitTitle();
 
+	//チュートリアルの終了処理
+	UninitTutorial();
+
 	//ゲームの終了処理
 	UninitGame();
 
@@ -371,7 +376,8 @@ static void Update(void)
 		UpdateTitle();
 		break;
 
-	case MODE_RULE:			//ルール
+	case MODE_TUTORIAL:		//チュートリアル
+		UpdateTutorial();
 		break;
 
 	case MODE_GAME:			//ゲーム
@@ -431,7 +437,8 @@ static void Draw(void)
 			DrawTitle();
 			break;
 
-		case MODE_RULE:			//ルール
+		case MODE_TUTORIAL:		//チュートリアル
+			DrawTutorial();
 			break;
 
 		case MODE_GAME:			//ゲーム
@@ -485,6 +492,17 @@ static void DrawDebug(void)
 	wsprintf(&aStr[0], "FPS  [ F1 ]  : %3d\n", s_nCountFPS);
 	nLength = (int)strlen(&aStr[0]);		//文字数の取得
 
+	if (GetDeath())
+	{//死ぬ
+		wsprintf(&aStr[nLength], "死   [ F2 ]  : true\n");
+	}
+	else
+	{//死なない
+		wsprintf(&aStr[nLength], "死   [ F2 ]  : false\n");
+	}
+	
+	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+
 	Player *pPlayer = GetPlayer();
 
 	wsprintf(&aStr[nLength], "ATTACK       : %3d\n", pPlayer->attack);
@@ -518,7 +536,8 @@ void SetMode(MODE mode)
 		UninitTitle();
 		break;
 
-	case MODE_RULE:			//ルール
+	case MODE_TUTORIAL:		//チュートリアル
+		UninitTutorial();
 		break;
 
 	case MODE_GAME:			//ゲーム
@@ -545,7 +564,8 @@ void SetMode(MODE mode)
 		InitTitle();
 		break;
 
-	case MODE_RULE:			//ルール
+	case MODE_TUTORIAL:		//チュートリアル
+		InitTutorial();
 		break;
 
 	case MODE_GAME:			//ゲーム

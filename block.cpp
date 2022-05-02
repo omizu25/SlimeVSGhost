@@ -22,7 +22,6 @@
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
-static void InitStruct(int i);
 static void InitType(void);
 static void DownCollision(void);
 
@@ -44,10 +43,8 @@ void InitBlock(void)
 
 	s_bThrough = false;
 
-	for (int i = 0; i < MAX_TEX; i++)
-	{//メモリのクリア
-		memset(&s_pTexture[i], NULL, sizeof(LPDIRECT3DTEXTURE9));
-	}
+	//メモリのクリア
+	memset(&s_pTexture[0], NULL, sizeof(s_pTexture));
 
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
@@ -87,12 +84,12 @@ void InitBlock(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
+	//メモリのクリア
+	memset(&s_aBlock[0], NULL, sizeof(s_aBlock));
+
 	//ブロックの情報の初期化設定
 	for (int i = 0; i < MAX_BLOCK; i++)
 	{
-		//構造体の初期化処理
-		InitStruct(i);
-
 		//全ての初期化処理
 		InitAll(pVtx);
 
@@ -349,21 +346,6 @@ void CollisionTopBlock(D3DXVECTOR3 *pPos, float fWidth, float fHeight)
 			}
 		}
 	}
-}
-
-//--------------------------------------------------
-//構造体の初期化処理
-//--------------------------------------------------
-static void InitStruct(int i)
-{
-	s_aBlock[i].pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	s_aBlock[i].fWidth = 0.0f;
-	s_aBlock[i].fHeight = 0.0f;
-
-	//種類はもう設定してある
-
-	s_aBlock[i].bCollision = false;
-	s_aBlock[i].bUse = false;		//使用していない状態にする
 }
 
 //--------------------------------------------------

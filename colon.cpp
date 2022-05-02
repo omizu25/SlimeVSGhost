@@ -24,13 +24,9 @@ typedef struct
 	D3DXVECTOR3		pos;			//位置
 	float			fWidth;			//幅
 	float			fHeight;		//高さ
+	int				nRank;			//順位
 	bool			bUse;			//使用しているかどうか
 }Colon;
-
-//--------------------------------------------------
-//プロトタイプ宣言
-//--------------------------------------------------
-static void InitStruct(Colon *pColon);
 
 //--------------------------------------------------
 //スタティック変数
@@ -50,7 +46,7 @@ void InitColon(void)
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
-		"Data\\TEXTURE\\time002.png",
+		"Data\\TEXTURE\\time003.png",
 		&s_pTexture);
 
 	//頂点バッファの生成
@@ -67,15 +63,22 @@ void InitColon(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
+	//メモリのクリア
+	memset(&s_aColon[0], NULL, sizeof(s_aColon));
+
 	for (int i = 0; i < MAX_COLON; i++)
 	{
-		Colon *pColon = &s_aColon[i];
+		//頂点情報の初期化処理
+		Initpos(pVtx);
 
-		//構造体の初期化処理
-		InitStruct(pColon);
+		//rhwの初期化処理
+		Initrhw(pVtx);
 
-		//全ての初期化処理
-		InitAll(pVtx);
+		//頂点カラーの設定
+		Setcol(pVtx, 0.0f, 0.0f, 0.0f, 1.0f);
+
+		//テクスチャ座標の初期化処理
+		Inittex(pVtx);
 
 		pVtx += 4;		//頂点データのポインタを４つ分進める
 	}
@@ -143,7 +146,7 @@ void DrawColon(void)
 //--------------------------------------------------
 //コロンの設定処理
 //--------------------------------------------------
-void SetColon(D3DXVECTOR3 pos, float fWidth, float fHeight)
+void SetColon(D3DXVECTOR3 pos, float fWidth, float fHeight, int nRank)
 {
 	for (int i = 0; i < MAX_COLON; i++)
 	{
@@ -159,6 +162,7 @@ void SetColon(D3DXVECTOR3 pos, float fWidth, float fHeight)
 		pColon->pos = pos;
 		pColon->fWidth = fWidth;
 		pColon->fHeight = fHeight;
+		pColon->nRank = nRank;
 		pColon->bUse = true;
 
 		VERTEX_2D *pVtx;		//頂点情報へのポインタ
@@ -179,12 +183,32 @@ void SetColon(D3DXVECTOR3 pos, float fWidth, float fHeight)
 }
 
 //--------------------------------------------------
-//構造体の初期化処理
+//コロンのランク処理
 //--------------------------------------------------
-static void InitStruct(Colon *pColon)
+void RankColon(D3DXCOLOR col, int nRank)
 {
-	pColon->pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pColon->fWidth = 0.0f;
-	pColon->fHeight = 0.0f;
-	pColon->bUse = false;		//使用していない状態にする
+	for (int i = 0; i < MAX_COLON; i++)
+	{
+		Colon *pColon = &s_aColon[i];
+
+		if (!pColon->bUse || pColon->nRank != nRank)
+		{//コロンが使用されていない、順位が違う
+			continue;
+		}
+
+		//コロンが使用されている、順位が同じ
+
+		VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+		//頂点情報をロックし、頂点情報へのポインタを取得
+		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+		pVtx += (i * 4);		//該当の位置まで進める
+
+		//頂点カラーの設定処理
+		Setcol(pVtx, col.r, col.g, col.b, col.a);
+
+		//頂点バッファをアンロックする
+		s_pVtxBuff->Unlock();
+	}
 }

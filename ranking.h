@@ -19,5 +19,6 @@ void DrawRanking(void);
 void ResetRanking(void);
 void SaveRanking(void);
 void SetRanking(int nRankTime);
+void InitRankUpdate(void);
 
 #endif // !_RANKING_H_

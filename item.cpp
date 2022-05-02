@@ -5,6 +5,7 @@
 //
 //--------------------------------------------------
 #include "enemy.h"
+#include "input.h"
 #include "item.h"
 #include "player.h"
 #include "setup.h"
@@ -24,7 +25,6 @@
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
-static void InitStruct(Item *pItem);
 static void UpdateOffScreen(Item *pItem);
 static void UpdateCollision(Item *pItem);
 
@@ -34,6 +34,7 @@ static void UpdateCollision(Item *pItem);
 static LPDIRECT3DTEXTURE9			s_pTexture[ITEMTYPE_MAX];		//テクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;				//頂点バッファのポインタ
 static Item							s_aItem[MAX_ITEM];				//アイテムの情報
+static bool							s_bDeath;						//倒すかどうか
 
 //--------------------------------------------------
 //アイテムの初期化処理
@@ -43,10 +44,8 @@ void InitItem(void)
 	//デバイスへのポインタの取得
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
-	for (int i = 0; i < ITEMTYPE_MAX; i++)
-	{//メモリのクリア
-		memset(&s_pTexture[i], NULL, sizeof(LPDIRECT3DTEXTURE9));
-	}
+	//メモリのクリア
+	memset(&s_pTexture[0], NULL, sizeof(s_pTexture));
 
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
@@ -59,6 +58,8 @@ void InitItem(void)
 		pDevice,
 		"Data\\TEXTURE\\Star002.png",
 		&s_pTexture[ITEMTYPE_STAR]);
+
+	s_bDeath = false;
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -74,14 +75,12 @@ void InitItem(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
+	//メモリのクリア
+	memset(&s_aItem[0], NULL, sizeof(s_aItem));
+
 	//アイテムの情報の初期化設定
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
-		Item *pItem = &s_aItem[i];
-
-		//構造体の初期化処理
-		InitStruct(pItem);
-
 		//全ての初期化処理
 		InitAll(pVtx);
 
@@ -157,6 +156,16 @@ void UpdateItem(void)
 		//頂点バッファをアンロックする
 		s_pVtxBuff->Unlock();
 	}
+
+#ifdef _DEBUG
+
+	if (GetKeyboardTrigger(DIK_F2))
+	{//F2キーが押された
+		s_bDeath = !s_bDeath;
+	}
+
+#endif // _DEBUG
+
 }
 
 //--------------------------------------------------
@@ -264,6 +273,14 @@ Item *GetItem(void)
 }
 
 //--------------------------------------------------
+//死の取得処理
+//--------------------------------------------------
+bool GetDeath(void)
+{
+	return s_bDeath;		//死かどうかを授ける
+}
+
+//--------------------------------------------------
 //アイテムの当たり判定処理
 //--------------------------------------------------
 void CollisionItem(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, float fWidth, float fHeight)
@@ -347,20 +364,6 @@ void InhaleItem(D3DXVECTOR3 pos, ATTACKSTATE *pAttack, float fWidth, float fHeig
 }
 
 //--------------------------------------------------
-//構造体の初期化処理
-//--------------------------------------------------
-static void InitStruct(Item *pItem)
-{
-	pItem->pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pItem->move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pItem->type = ITEMTYPE_BLOCK;
-	pItem->fWidth = 0.0f;
-	pItem->fHeight = 0.0f;
-	pItem->bDirection = false;		//左向き
-	pItem->bUse = false;			//使用していない状態にする
-}
-
-//--------------------------------------------------
 //画面外処理
 //--------------------------------------------------
 static void UpdateOffScreen(Item *pItem)
@@ -412,8 +415,16 @@ static void UpdateCollision(Item *pItem)
 			pItem->type == ITEMTYPE_STAR)
 		{//敵にスターが当たった時
 
-			//敵のヒット処理
-			HitEnemy(i, 20);
+			if (s_bDeath)
+			{//死
+				//敵のヒット処理
+				HitEnemy(i, 100);
+			}
+			else
+			{
+				//敵のヒット処理
+				HitEnemy(i, 20);
+			}
 
 			pItem->bUse = false;		//使用していない状態にする
 		}

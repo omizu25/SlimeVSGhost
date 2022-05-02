@@ -48,12 +48,12 @@ void InitTime(void)
 		float fInterval = (NUMBER_WIDTH * i) + (WIDTH_INTERVAL * (i / 2));
 
 		//êîÇÃê›íËèàóù
-		SetNumber(D3DXVECTOR3(s_pos.x - fInterval, s_pos.y, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, aNumber[i], i);
+		SetNumber(D3DXVECTOR3(s_pos.x - fInterval, s_pos.y, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, aNumber[i], i, 0);
 
-		if (i == 2 || i == 4)
-		{
+		if ((i % 2 == 0) && (i != 0))
+		{//ÇQÇÃî{êî
 			//ÉRÉçÉìÇÃê›íËèàóù
-			SetColon(D3DXVECTOR3(s_pos.x - fInterval + WIDTH_INTERVAL, s_pos.y, 0.0f), WIDTH_INTERVAL, NUMBER_HEIGHT * 0.5f);
+			SetColon(D3DXVECTOR3(s_pos.x - fInterval + WIDTH_INTERVAL, s_pos.y, 0.0f), WIDTH_INTERVAL, NUMBER_HEIGHT * 0.5f, 0);
 		}
 	}
 }

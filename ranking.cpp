@@ -27,23 +27,12 @@
 #define HEIGHT_INTERVAL				(20.0f)			//高さの間隔
 
 //--------------------------------------------------
-//ランキングの状態(点滅具合)を定義
-//--------------------------------------------------
-typedef enum
-{
-	RANKINGSTATE_IN = 0,		//見える
-	RANKINGSTATE_OUT,			//見えない
-	RANKINGSTATE_MAX
-}RANKINGSTATE;
-
-//--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;				//頂点バッファのポインタ
 static int							s_aRanking[MAX_RANKING];		//ランキングの情報
 static D3DXVECTOR3					s_pos;							//位置
-static RANKINGSTATE					s_state;						//状態
-static int							s_nRankingUpdate;				//更新ランクNo.
+static int							s_nRankUpdate;					//更新ランクNo.
 
 //--------------------------------------------------
 //ランキングの初期化処理
@@ -106,12 +95,12 @@ void InitRanking(void)
 			float fWidthInterval = (NUMBER_WIDTH * j) + (WIDTH_INTERVAL * (j / 2));
 
 			//数の設定処理
-			SetNumber(s_pos + D3DXVECTOR3(-fWidthInterval, fHeightInterval, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, aNumber[j], j);
+			SetNumber(s_pos + D3DXVECTOR3(-fWidthInterval, fHeightInterval, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, aNumber[j], j, i);
 			
-			if (j == 2 || j == 4)
-			{
+			if ((j % 2 == 0) && (j != 0))
+			{//２の倍数
 				//コロンの設定処理
-				SetColon(s_pos + D3DXVECTOR3(-fWidthInterval + WIDTH_INTERVAL, fHeightInterval, 0.0f), WIDTH_INTERVAL, NUMBER_HEIGHT * 0.5f);
+				SetColon(s_pos + D3DXVECTOR3(-fWidthInterval + WIDTH_INTERVAL, fHeightInterval, 0.0f), WIDTH_INTERVAL, NUMBER_HEIGHT * 0.5f, i);
 			}
 		}
 	}
@@ -146,50 +135,11 @@ void UpdateRanking(void)
 		SetFade(MODE_TITLE);
 	}
 
-	//if (s_nRankingUpdate != -1)
-	//{//新しいスコアがある時
-	//	if (s_state == RANKINGSTATE_IN)
-	//	{//フェードイン状態
-	//		s_aRanking[s_nRankingUpdate].col.a -= 0.025f;		//ポリゴンを透明にしていく
-
-	//		if (s_aRanking[s_nRankingUpdate].col.a <= 0.0f)
-	//		{
-	//			s_aRanking[s_nRankingUpdate].col.a = 0.0f;
-	//			s_state = RANKINGSTATE_OUT;		//フェードアウト状態に
-	//		}
-	//	}
-	//	else if (s_state == RANKINGSTATE_OUT)
-	//	{//フェードアウト状態
-	//		s_aRanking[s_nRankingUpdate].col.a += 0.025f;		//ポリゴンを不透明にしていく
-
-	//		if (s_aRanking[s_nRankingUpdate].col.a >= 1.0f)
-	//		{
-	//			s_aRanking[s_nRankingUpdate].col.a = 1.0f;
-	//			s_state = RANKINGSTATE_IN;		//フェードイン状態に
-	//		}
-	//	}
-
-	//	VERTEX_2D *pVtx;		//頂点情報へのポインタ
-
-	//	//頂点情報をロックし、頂点情報へのポインタを取得
-	//	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
-
-	//	//該当の位置まで進める
-	//	pVtx += (s_nRankingUpdate *  MAX_TIME * 4);
-
-	//	for (int i = 0; i < MAX_RANKING; i++)
-	//	{//８桁まで
-	//		//頂点カラーの設定
-	//		pVtx[0].col = s_aRanking[s_nRankingUpdate].col;
-	//		pVtx[1].col = s_aRanking[s_nRankingUpdate].col;
-	//		pVtx[2].col = s_aRanking[s_nRankingUpdate].col;
-	//		pVtx[3].col = s_aRanking[s_nRankingUpdate].col;
-
-	//		pVtx += 4;		//頂点データのポインタを４つ分進める
-	//	}
-	//	//頂点バッファをアンロックする
-	//	s_pVtxBuffRankScore->Unlock();
-	//}
+	if (s_nRankUpdate != -1)
+	{//新しいスコアがある時
+		//数のランク処理
+		RankNumber(s_nRankUpdate);
+	}
 
 	//数の更新処理
 	UpdateNumber();
@@ -235,7 +185,7 @@ void ResetRanking(void)
 {
 	FILE *pRankingFile;			//ファイルポインタを宣言
 
-	s_nRankingUpdate = -1;		//更新ランクNo.の初期化
+	s_nRankUpdate = -1;		//更新ランクNo.の初期化
 
 	//ファイルを開く
 	pRankingFile = fopen(FILE_NAME, "r");
@@ -337,12 +287,20 @@ void SetRanking(int nRankTime)
 
 	for (int i = 0; i < MAX_RANKING; i++)
 	{//５位まで
-		s_nRankingUpdate = -1;
+		s_nRankUpdate = -1;
 
 		if (nRankTime == s_aRanking[i])
 		{//指定のスコアを探す
-			s_nRankingUpdate = i;
+			s_nRankUpdate = i;
 			break;
 		}
 	}
+}
+
+//--------------------------------------------------
+//ランキングの更新の初期化処理
+//--------------------------------------------------
+void InitRankUpdate(void)
+{
+	s_nRankUpdate = -1;
 }

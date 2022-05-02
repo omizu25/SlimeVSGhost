@@ -4,14 +4,27 @@
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
+#include "colon.h"
 #include "setup.h"
 #include "number.h"
+
+#include <assert.h>
 
 //--------------------------------------------------
 //マクロ定義
 //--------------------------------------------------
 #define MAX_NUMBER		(256)		//数の最大桁数
 #define MAX_TEX			(10)		//texの最大数
+
+//--------------------------------------------------
+//ランキングの状態(点滅具合)を定義
+//--------------------------------------------------
+typedef enum
+{
+	RANKSTATE_IN = 0,		//見える
+	RANKSTATE_OUT,			//見えない
+	RANKSTATE_MAX
+}RANKSTATE;
 
 //--------------------------------------------------
 //数の構造体を定義
@@ -23,13 +36,9 @@ typedef struct
 	float			fHeight;		//高さ
 	int				nNumber;		//数
 	int				nDigit;			//桁数
+	int				nRank;			//順位
 	bool			bUse;			//使用しているかどうか
 }Number;
-
-//--------------------------------------------------
-//プロトタイプ宣言
-//--------------------------------------------------
-static void InitStruct(Number *pNumber);
 
 //--------------------------------------------------
 //スタティック変数
@@ -37,6 +46,8 @@ static void InitStruct(Number *pNumber);
 static LPDIRECT3DTEXTURE9			s_pTexture = NULL;			//テクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;			//頂点バッファのポインタ
 static Number						s_aNumber[MAX_NUMBER];		//数の情報
+static RANKSTATE					s_state;					//状態
+static D3DXCOLOR					s_col;						//色
 
 //--------------------------------------------------
 //数の初期化処理
@@ -52,6 +63,9 @@ void InitNumber(void)
 		"Data\\TEXTURE\\number000.png",
 		&s_pTexture);
 
+	s_state = RANKSTATE_IN;
+	s_col = D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f);
+
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
 		sizeof(VERTEX_2D) * 4 * MAX_NUMBER,
@@ -66,13 +80,11 @@ void InitNumber(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
+	//メモリのクリア
+	memset(&s_aNumber[0], NULL, sizeof(s_aNumber));
+
 	for (int i = 0; i < MAX_NUMBER; i++)
 	{
-		Number *pNumber = &s_aNumber[i];
-
-		//構造体の初期化処理
-		InitStruct(pNumber);
-
 		//全ての初期化処理
 		InitAll(pVtx);
 
@@ -142,7 +154,7 @@ void DrawNumber(void)
 //--------------------------------------------------
 //数の設定処理
 //--------------------------------------------------
-void SetNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber, int nDigit)
+void SetNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber, int nDigit, int nRank)
 {
 	for (int i = 0; i < MAX_NUMBER; i++)
 	{
@@ -160,6 +172,7 @@ void SetNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber, int nD
 		pNumber->fHeight = fHeight;
 		pNumber->nNumber = nNumber;
 		pNumber->nDigit = nDigit;
+		pNumber->nRank = nRank;
 		pNumber->bUse = true;
 
 		VERTEX_2D *pVtx;		//頂点情報へのポインタ
@@ -227,14 +240,66 @@ void TexNumber(int nNumber, int nDigit)
 }
 
 //--------------------------------------------------
-//構造体の初期化処理
+//数のランク処理
 //--------------------------------------------------
-static void InitStruct(Number *pNumber)
+void RankNumber(int nRank)
 {
-	pNumber->pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pNumber->fWidth = 0.0f;
-	pNumber->fHeight = 0.0f;
-	pNumber->nNumber = 0;
-	pNumber->nDigit = 0;
-	pNumber->bUse = false;		//使用していない状態にする
+	switch (s_state)
+	{
+	case RANKSTATE_IN:		//見えないように
+
+		s_col.a -= 0.025f;		//ポリゴンを透明にしていく
+
+		if (s_col.a <= 0.035f)
+		{//透明になった
+			s_col.a = 0.0f;
+			s_state = RANKSTATE_OUT;		//フェードアウト状態に
+		}
+
+		break;
+
+	case RANKSTATE_OUT:		//見えるように
+
+		s_col.a += 0.025f;		//ポリゴンを不透明にしていく
+
+		if (s_col.a >= 1.0f)
+		{//不透明になった
+			s_col.a = 1.0f;
+			s_state = RANKSTATE_IN;			//フェードイン状態に
+		}
+
+		break;
+
+	default:
+		assert(false);
+		break;
+	}
+
+	for (int i = 0; i < MAX_NUMBER; i++)
+	{
+		Number *pNumber = &s_aNumber[i];
+
+		if (!pNumber->bUse || pNumber->nRank != nRank)
+		{//数が使用されていない、順位が違う
+			continue;
+		}
+
+		//数が使用されている、順位が同じ
+
+		VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+		//頂点情報をロックし、頂点情報へのポインタを取得
+		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+		pVtx += (i * 4);		//該当の位置まで進める
+
+		//頂点カラーの設定処理
+		Setcol(pVtx, s_col.r, s_col.g, s_col.b, s_col.a);
+
+		//頂点バッファをアンロックする
+		s_pVtxBuff->Unlock();
+	}
+
+	//コロンのランク処理
+	RankColon(s_col, nRank);
 }

@@ -29,7 +29,6 @@
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
-static void InitStruct(Enemy *pEnemy);
 static void UpdateStop(Enemy *pEnemy);
 static void UpdateCollision(Enemy *pEnemy);
 static void UpdateOffScreen(Enemy *pEnemy);
@@ -53,10 +52,8 @@ void InitEnemy(void)
 	//デバイスへのポインタの取得
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
-	for (int i = 0; i < ENEMYTYPE_MAX; i++)
-	{//メモリのクリア
-		memset(&s_pTexture[i], NULL, sizeof(LPDIRECT3DTEXTURE9));
-	}
+	//メモリのクリア
+	memset(&s_pTexture[0], NULL, sizeof(s_pTexture));
 
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
@@ -83,14 +80,12 @@ void InitEnemy(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
+	//メモリのクリア
+	memset(&s_aEnemy[0], NULL, sizeof(s_aEnemy));
+
 	//敵の情報の初期化設定
 	for (int i = 0; i < ENEMYTYPE_MAX; i++)
 	{
-		Enemy *pEnemy = &s_aEnemy[i];
-
-		//構造体の初期化処理
-		InitStruct(pEnemy);
-
 		//全ての初期化処理
 		InitAll(pVtx);
 
@@ -382,28 +377,6 @@ void HitEnemy(int nCntEnemy, int nDamage)
 			s_pVtxBuff->Unlock();
 		}
 	}
-}
-
-//--------------------------------------------------
-//構造体の初期化処理
-//--------------------------------------------------
-static void InitStruct(Enemy *pEnemy)
-{
-	pEnemy->pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pEnemy->posOld = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pEnemy->move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pEnemy->type = ENEMYTYPE_BOY;
-	pEnemy->state = ENEMYSTATE_NORMAL;
-	pEnemy->pop = ENEMYPOP_TOP;
-	pEnemy->fWidth = 0.0f;
-	pEnemy->fHeight = 0.0f;
-	pEnemy->nCounterState = 0;
-	pEnemy->nCounterStop = 0;
-	pEnemy->nCounterAnim = 0;
-	pEnemy->nPatternAnim = 0;
-	pEnemy->bDirection = false;
-	pEnemy->nLife = 0;
-	pEnemy->bUse = false;		//使用していない状態にする
 }
 
 //--------------------------------------------------

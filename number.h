@@ -16,7 +16,8 @@ void InitNumber(void);
 void UninitNumber(void);
 void UpdateNumber(void);
 void DrawNumber(void);
-void SetNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber, int nDigit);
+void SetNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber, int nDigit, int nRank);
 void TexNumber(int nNumber, int nDigit);
+void RankNumber(int nRank);
 
 #endif // !_NUMBER_H_

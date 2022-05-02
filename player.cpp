@@ -77,6 +77,9 @@ void InitPlayer(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
+	//メモリのクリア
+	memset(&s_Player, NULL, sizeof(s_Player));
+
 	//構造体の初期化処理
 	InitStruct();
 
@@ -252,19 +255,12 @@ static void InitStruct(void)
 	s_Player.pos.y = (SCREEN_HEIGHT / MAX_Y_BLOCK) * MIDDLE_BLOCK;
 	s_Player.pos.z = 0.0f;
 
-	s_Player.posOld = D3DXVECTOR3(0.0f, 0.0f, 0.0f);		//前回の位置を初期化
-	s_Player.move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);			//移動量を初期化
-	s_Player.jump = JUMPSTATE_NONE;							//何もしていない状態にする
-	s_Player.attack = ATTACKSTATE_NONE;						//何もしていない状態にする
-	s_Player.state = PLAYERSTATE_NORMAL;					//通常状態にする
 	s_Player.fWidth = PLAYER_WIDTH * 0.5f;					//幅の初期化
 	s_Player.fHeight = PLAYER_HEIGHT;						//高さの初期化
-	s_Player.fCol = 0.0f;									//カラーの初期化
-	s_Player.nCounterState = 0;								//カウンターの初期化
-	s_Player.nCounterJump = 0;								//カウンターの初期化
-	s_Player.nCounterAttack = 0;							//カウンターの初期化
 	s_Player.nLife = 100;									//寿命の初期化
 	s_Player.bDirection = true;								//右向き
+
+	//他のはmemsetで0にした。
 }
 
 //--------------------------------------------------
