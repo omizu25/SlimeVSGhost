@@ -1,22 +1,23 @@
 //--------------------------------------------------
 //
-// STG制作 ( main.cpp )
+// アクションゲーム制作 ( main.cpp )
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
 #include "input.h"
 #include "main.h"
+#include "map.h"
 #include "player.h"
 
-//-------------------------
+//--------------------------------------------------
 //マクロ定義
-//-------------------------
+//--------------------------------------------------
 #define CLASS_NAME		"windowClass"		//ウインドウクラスの名前
 #define WINDOW_NAME		"STG制作"			//ウインドウの名前 (キャプションに表示)
 
-//-------------------------
+//--------------------------------------------------
 //プロトタイプ宣言
-//-------------------------
+//--------------------------------------------------
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow);
 void Uninit(void);
@@ -24,18 +25,19 @@ void Update(void);
 void Draw(void);
 void DrawDebug(void);
 
-//-------------------------
-//グローバル変数
-//-------------------------
-LPDIRECT3D9				g_pD3D = NULL;				//Direct3Dオブジェクトへのポインタ
-LPDIRECT3DDEVICE9		g_pD3DDevice = NULL;		//Direct3Dデバイスへのポインタ
-LPD3DXFONT				g_pFont = NULL;				//フォントへのポインタ
-int						g_nCountFPS = 0;			//FPSカウンタ
-bool					g_bDebug = true;			//デバッグ表示をするか [表示  : true 非表示  : false]
+//--------------------------------------------------
+//スタティック変数
+//--------------------------------------------------
+static LPDIRECT3D9				s_pD3D = NULL;				//Direct3Dオブジェクトへのポインタ
+static LPDIRECT3DDEVICE9		s_pD3DDevice = NULL;		//Direct3Dデバイスへのポインタ
+static LPD3DXFONT				s_pFont = NULL;				//フォントへのポインタ
+static int						s_nCountFPS = 0;			//FPSカウンタ
+static bool						s_bDebug = true;			//デバッグ表示をするか [表示  : true 非表示  : false]
+static bool						s_bPause = false;			//ポーズ中かどうか [してる  : true してない  : false]
 
-//-------------------------
+//--------------------------------------------------
 //main関数
-//-------------------------
+//--------------------------------------------------
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, LPSTR lpCmdLine, int nCmdShow)
 {
 	WNDCLASSEX wcex =
@@ -122,7 +124,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, LPSTR lpCmdLine
 			if ((dwCorrentTime - dwFPSLastTime) >= 500)
 			{//0.5秒経過
 				//FPSの計算
-				g_nCountFPS = (dwFrameCount * 1000) / (dwCorrentTime - dwFPSLastTime);
+				s_nCountFPS = (dwFrameCount * 1000) / (dwCorrentTime - dwFPSLastTime);
 
 				dwFPSLastTime = dwCorrentTime;		//FPSを計測した時刻を保存
 
@@ -156,9 +158,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, LPSTR lpCmdLine
 	return (int)msg.wParam;
 }
 
-//-------------------------
+//--------------------------------------------------
 //ウインドウプロシージャ
-//-------------------------
+//--------------------------------------------------
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
@@ -182,23 +184,23 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);		//規定の処理を返す
 }
 
-//-------------------------
+//--------------------------------------------------
 //初期化処理
-//-------------------------
+//--------------------------------------------------
 HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 {
 	D3DDISPLAYMODE d3ddm;				//ディスプレイモード
 	D3DPRESENT_PARAMETERS d3dpp;		//プレゼンテーションパラメータ
 
 	//Direct3Dオブジェクトの生成
-	g_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+	s_pD3D = Direct3DCreate9(D3D_SDK_VERSION);
 
-	if (g_pD3D == NULL)
+	if (s_pD3D == NULL)
 	{//開かなかった時用の確認
 		return E_FAIL;
 	}
 
-	if (FAILED(g_pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3ddm)))
+	if (FAILED(s_pD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3ddm)))
 	{//現在のディスプレイモードを取得
 		return E_FAIL;
 	}
@@ -217,63 +219,63 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_DEFAULT;		//インターバル
 
 	//Direct3Dデバイスの生成(描画処理と頂点処理をハードウェア)
-	if (FAILED(g_pD3D->CreateDevice(
+	if (FAILED(s_pD3D->CreateDevice(
 		D3DADAPTER_DEFAULT,
 		D3DDEVTYPE_HAL,
 		hWnd,
 		D3DCREATE_HARDWARE_VERTEXPROCESSING,
 		&d3dpp,
-		&g_pD3DDevice)))
+		&s_pD3DDevice)))
 	{
 		//Direct3Dデバイスの生成(描画処理はハードウェア、頂点処理はCPUで行う)
-		if (FAILED(g_pD3D->CreateDevice(
+		if (FAILED(s_pD3D->CreateDevice(
 			D3DADAPTER_DEFAULT,
 			D3DDEVTYPE_HAL,
 			hWnd,
 			D3DCREATE_SOFTWARE_VERTEXPROCESSING,
 			&d3dpp,
-			&g_pD3DDevice)))
+			&s_pD3DDevice)))
 		{
 			//Direct3Dデバイスの生成(描画処理と頂点処理をCPUで行う)
-			if (FAILED(g_pD3D->CreateDevice(
+			if (FAILED(s_pD3D->CreateDevice(
 				D3DADAPTER_DEFAULT,
 				D3DDEVTYPE_REF,
 				hWnd,
 				D3DCREATE_SOFTWARE_VERTEXPROCESSING,
 				&d3dpp,
-				&g_pD3DDevice)))
+				&s_pD3DDevice)))
 			{
 				return E_FAIL;
 			}
 		}
 	}
 
-	//--------------------------------------------------
+	//-------------------------
 	//各種オブジェクトの初期化処理
-	//--------------------------------------------------
+	//-------------------------
 
 	//レンダーステートの設定
-	g_pD3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
-	g_pD3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-	g_pD3DDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-	g_pD3DDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+	s_pD3DDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
+	s_pD3DDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+	s_pD3DDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+	s_pD3DDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
 	//サンプラーステートの設定
-	g_pD3DDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);		//画像を小さくしても綺麗にする
-	g_pD3DDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);		//画像を大きくしても綺麗にする
-	g_pD3DDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);		//テクスチャのUの繰り返し方を設定
-	g_pD3DDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);		//テクスチャのVの繰り返し方を設定
+	s_pD3DDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);		//画像を小さくしても綺麗にする
+	s_pD3DDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);		//画像を大きくしても綺麗にする
+	s_pD3DDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_WRAP);		//テクスチャのUの繰り返し方を設定
+	s_pD3DDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_WRAP);		//テクスチャのVの繰り返し方を設定
 
 	//テクスチャステージステートの設定
-	g_pD3DDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);		//ポリゴンとテクスチャのαをまぜる
-	g_pD3DDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);		//１つ目の色はテクスチャの色
-	g_pD3DDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_CURRENT);		//２つ目の色は現在の色
+	s_pD3DDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);		//ポリゴンとテクスチャのαをまぜる
+	s_pD3DDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);		//１つ目の色はテクスチャの色
+	s_pD3DDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_CURRENT);		//２つ目の色は現在の色
 
 	//デバッグ表示用フォントの生成
 	D3DXCreateFont(
-		g_pD3DDevice, 18, 0, 0, 0, FALSE, SHIFTJIS_CHARSET,
+		s_pD3DDevice, 18, 0, 0, 0, FALSE, SHIFTJIS_CHARSET,
 		OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH,
-		"Terminal", &g_pFont);
+		"Terminal", &s_pFont);
 
 	//キーボードの初期化処理
 	if (FAILED(InitKeyboard(hInstance, hWnd)))
@@ -284,20 +286,23 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	//ジョイパッドの初期化処理
 	InitJoypad();
 
+	//マップの初期化処理
+	InitMap();
+
 	//プレイヤーの初期化処理
 	InitPlayer();
 	
 	return S_OK;
 }
 
-//-------------------------
+//--------------------------------------------------
 //終了処理
-//-------------------------
+//--------------------------------------------------
 void Uninit(void)
 {
-	//--------------------------------------------------
+	//-------------------------
 	//各種オブジェクトの終了処理
-	//--------------------------------------------------
+	//-------------------------
 
 	//キーボードの終了処理
 	UninitKeyboard();
@@ -305,36 +310,39 @@ void Uninit(void)
 	//ジョイパッドの終了処理
 	UninitJoypad();
 
+	//マップの終了処理
+	UninitMap();
+
 	//プレイヤーの終了処理
 	UninitPlayer();
 
-	if (g_pFont != NULL)
+	if (s_pFont != NULL)
 	{//デバッグ表示用フォントの破棄
-		g_pFont->Release();
-		g_pFont = NULL;
+		s_pFont->Release();
+		s_pFont = NULL;
 	}
 
-	if (g_pD3DDevice != NULL)
+	if (s_pD3DDevice != NULL)
 	{//Direct3Dデバイスの破棄
-		g_pD3DDevice->Release();
-		g_pD3DDevice = NULL;
+		s_pD3DDevice->Release();
+		s_pD3DDevice = NULL;
 	}
 
-	if (g_pD3D != NULL)
+	if (s_pD3D != NULL)
 	{//Direct3Dオブジェクトの破棄
-		g_pD3D->Release();
-		g_pD3D = NULL;
+		s_pD3D->Release();
+		s_pD3D = NULL;
 	}
 }
 
-//-------------------------
+//--------------------------------------------------
 //更新処理
-//-------------------------
+//--------------------------------------------------
 void Update(void)
 {
-	//--------------------------------------------------
+	//-------------------------
 	//各種オブジェクトの更新処理
-	//--------------------------------------------------
+	//-------------------------
 
 	//キーボードの更新処理
 	UpdateKeyboard();
@@ -342,34 +350,42 @@ void Update(void)
 	//ジョイパッドの更新処理
 	UpdateJoypad();
 
-	//プレイヤーの更新処理
-	UpdatePlayer();
+#ifdef  _DEBUG
+
+	if (GetKeyboardTrigger(DIK_P) || GetJoypadTrigger(JOYKEY_Y))
+	{//ポーズキー(Pキー)が押されたかどうか
+		s_bPause = !s_bPause;
+	}
+
+#endif //  _DEBUG
+
+	if (!s_bPause)
+	{//ポーズしてない時
+		//マップの更新処理
+		UpdateMap();
+
+		//プレイヤーの更新処理
+		UpdatePlayer();
+	}
 
 #ifdef  _DEBUG
 
-	if (GetKeyboardTrigger(DIK_F1) == true || GetJoypadTrigger(JOYKEY_BACK) == true)
+	if (GetKeyboardTrigger(DIK_F1) || GetJoypadTrigger(JOYKEY_BACK))
 	{//F1キーが押された
-		if (g_bDebug == true)
-		{//デバッグ表示
-			g_bDebug = false;
-		}
-		else if (g_bDebug == false)
-		{//デバッグ非表示
-			g_bDebug = true;
-		}
+		s_bDebug = !s_bDebug;
 	}
 
 #endif //  _DEBUG
 
 }
 
-//-------------------------
+//--------------------------------------------------
 //描画処理
-//-------------------------
+//--------------------------------------------------
 void Draw(void)
 {
 	//画面クリア(バッグバッファ＆Zバッファのクリア)
-	g_pD3DDevice->Clear(
+	s_pD3DDevice->Clear(
 		0,
 		NULL,
 		(D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER),
@@ -378,18 +394,21 @@ void Draw(void)
 		0);
 
 	//描画開始
-	if (SUCCEEDED(g_pD3DDevice->BeginScene()))
+	if (SUCCEEDED(s_pD3DDevice->BeginScene()))
 	{//描画開始が成功した場合
-		//--------------------------------------------------
+		//-------------------------
 		//各種オブジェクトの描画処理
-		//--------------------------------------------------
+		//-------------------------
+
+		//マップの描画処理
+		DrawMap();
 
 		//プレイヤーの描画処理
 		DrawPlayer();
 
 #ifdef  _DEBUG
 
-		if (g_bDebug == true)
+		if (s_bDebug)
 		{//デバッグ表示
 			//デバッグの表示
 			DrawDebug();
@@ -398,24 +417,24 @@ void Draw(void)
 #endif //  _DEBUG
 
 		//描画終了
-		g_pD3DDevice->EndScene();
+		s_pD3DDevice->EndScene();
 	}
 
 	//バックバッファとフロントバッファの入れ替え
-	g_pD3DDevice->Present(NULL, NULL, NULL, NULL);
+	s_pD3DDevice->Present(NULL, NULL, NULL, NULL);
 }
 
-//-------------------------
+//--------------------------------------------------
 //デバイスの取得
-//-------------------------
+//--------------------------------------------------
 LPDIRECT3DDEVICE9 GetDevice(void)
 {
-	return g_pD3DDevice;
+	return s_pD3DDevice;
 }
 
-//-------------------------
+//--------------------------------------------------
 //デバッグの表示
-//-------------------------
+//--------------------------------------------------
 void DrawDebug(void)
 {
 	RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
@@ -423,9 +442,74 @@ void DrawDebug(void)
 	int nLength;
 
 	//文字列の代入
-	wsprintf(&aStr[0], "FPS       : %3d\n", g_nCountFPS);
+	wsprintf(&aStr[0], "FPS            : %3d\n", s_nCountFPS);
 	nLength = (int)strlen(&aStr[0]);		//文字数の取得
 
+	if (s_bPause)
+	{//ポーズしてる
+		wsprintf(&aStr[nLength], "ポーズ [ Ｐ ]  :【 ON 】\n");
+	}
+	else
+	{//ポーズしてない
+		wsprintf(&aStr[nLength], "ポーズ [ Ｐ ]  :【 OFF 】\n");
+	}
+
 	//テキストの描画
-	g_pFont->DrawText(NULL, &aStr[0], -1, &rect, DT_LEFT, D3DCOLOR_RGBA(255, 0, 0, 255));
+	s_pFont->DrawText(NULL, &aStr[0], -1, &rect, DT_LEFT, D3DCOLOR_RGBA(255, 0, 0, 255));
+}
+
+//--------------------------------------------------
+//頂点座標の設定処理 (真ん中に中心)
+//--------------------------------------------------
+void SetMiddlepos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
+{
+	pVtx[0].pos = pos + D3DXVECTOR3(-fWidth, -fHeight, 0.0f);
+	pVtx[1].pos = pos + D3DXVECTOR3( fWidth, -fHeight, 0.0f);
+	pVtx[2].pos = pos + D3DXVECTOR3(-fWidth,  fHeight, 0.0f);
+	pVtx[3].pos = pos + D3DXVECTOR3( fWidth,  fHeight, 0.0f);
+}
+
+
+//--------------------------------------------------
+//頂点座標の設定処理 (下に中心)
+//--------------------------------------------------
+void SetBottompos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
+{
+	pVtx[0].pos = pos + D3DXVECTOR3(-fWidth, -fHeight, 0.0f);
+	pVtx[1].pos = pos + D3DXVECTOR3( fWidth, -fHeight, 0.0f);
+	pVtx[2].pos = pos + D3DXVECTOR3(-fWidth, 0.0f, 0.0f);
+	pVtx[3].pos = pos + D3DXVECTOR3( fWidth, 0.0f, 0.0f);
+}
+
+//--------------------------------------------------
+//rhwの設定処理
+//--------------------------------------------------
+void Setrhw(VERTEX_2D *pVtx)
+{
+	pVtx[0].rhw = 1.0f;
+	pVtx[1].rhw = 1.0f;
+	pVtx[2].rhw = 1.0f;
+	pVtx[3].rhw = 1.0f;
+}
+
+//--------------------------------------------------
+//頂点カラーの設定処理
+//--------------------------------------------------
+void Setcol(VERTEX_2D *pVtx, float Red, float Green, float Blue, float Alpha)
+{
+	pVtx[0].col = D3DXCOLOR(Red, Green, Blue, Alpha);
+	pVtx[1].col = D3DXCOLOR(Red, Green, Blue, Alpha);
+	pVtx[2].col = D3DXCOLOR(Red, Green, Blue, Alpha);
+	pVtx[3].col = D3DXCOLOR(Red, Green, Blue, Alpha);
+}
+
+//--------------------------------------------------
+//頂点カラーの設定処理
+//--------------------------------------------------
+void Settex(VERTEX_2D *pVtx, float ULeft, float URight, float VTop, float VBottom)
+{
+	pVtx[0].tex = D3DXVECTOR2(ULeft, VTop);
+	pVtx[1].tex = D3DXVECTOR2(URight, VTop);
+	pVtx[2].tex = D3DXVECTOR2(ULeft, VBottom);
+	pVtx[3].tex = D3DXVECTOR2(URight, VBottom);
 }

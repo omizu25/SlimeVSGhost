@@ -1,6 +1,6 @@
 //--------------------------------------------------
 //
-// STG制作 ( player.h )
+// アクションゲーム制作 ( player.h )
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
@@ -9,33 +9,28 @@
 
 #include "main.h"
 
-//-------------------------
-//マクロ定義
-//-------------------------
-#define PLAYER_WIDTH		(150)		//プレイヤーの幅
-#define PLAYER_HEIGHT		(120)		//プレイヤーの高さ
-
-//-------------------------
+//--------------------------------------------------
 //プレイヤーの構造体を定義
-//-------------------------
+//--------------------------------------------------
 typedef struct
 {
-	D3DXVECTOR3			pos;			//位置
-	D3DXVECTOR3			move;			//移動量
-	D3DXVECTOR3			rot;			//向き
-	float				fLength;		//対角線の長さ
-	float				fAngle;			//対角線の角度
-	int					nLife;			//体力
-	int					nStock;			//残機
-	bool				bDisp;			//表示しているかどうか
+	D3DXVECTOR3		pos;				//現在の位置
+	D3DXVECTOR3		posOld;				//前回の位置
+	D3DXVECTOR3		move;				//移動量
+	bool			bjump;				//ジャンプ状態 [してる  : true してない  : false]
+	int				nCounterAnim;		//アニメーションカウンター
+	int				nPatternAnim;		//アニメーションパターンNo.
+	int				nDirectionMove;		//向き [0  : 右向き 1  : 左向き]
 }Player;
 
-//-------------------------
+//--------------------------------------------------
 //プロトタイプ宣言
-//-------------------------
+//--------------------------------------------------
 void InitPlayer(void);
 void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
+Player GetPlayer(void);
+
 
 #endif // !_PLAYER_H_
