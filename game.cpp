@@ -7,6 +7,7 @@
 #include "bg.h"
 #include "block.h"
 #include "colon.h"
+#include "effect.h"
 #include "enemy.h"
 #include "fade.h"
 #include "game.h"
@@ -68,6 +69,9 @@ void InitGame(void)
 	//ポップ処理
 	SetPop();
 
+	//エフェクトの初期化処理
+	//InitEffect();
+
 	//プレイヤーの初期化処理
 	InitPlayer();
 
@@ -100,6 +104,9 @@ void UninitGame(void)
 
 	//敵の終了処理
 	UninitEnemy();
+
+	//エフェクトの終了処理
+	//UninitEffect();
 
 	//プレイヤーの終了処理
 	UninitPlayer();
@@ -151,6 +158,9 @@ void UpdateGame(void)
 
 			//敵の更新処理
 			UpdateEnemy();
+
+			//エフェクトの更新処理
+			//UpdateEffect();
 
 			//プレイヤーの更新処理
 			UpdatePlayer();
@@ -212,11 +222,15 @@ void DrawGame(void)
 	//敵の描画処理
 	DrawEnemy();
 
+	//エフェクト描画処理
+	//DrawEffect();
+
 	//プレイヤーの描画処理
 	DrawPlayer();
 
 	//ゲージの描画処理
 	DrawGauge();
+
 	//数の描画処理
 	DrawNumber();
 

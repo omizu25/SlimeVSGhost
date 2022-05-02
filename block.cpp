@@ -16,7 +16,7 @@
 //マクロ定義
 //--------------------------------------------------
 #define FILE_DATA				(1024)					//ファイルのデータ数
-#define FILE_NAME		"data/test_map.txt"				//マップのパス
+#define FILE_NAME		"data/map000.txt"				//マップのパス
 #define MAX_TEX			(BLOCKTYPE_MAX - 1)				//テクスチャの最大数
 
 //--------------------------------------------------
@@ -276,12 +276,12 @@ bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove,
 				if ((pPosOld->x + fWidth <= fLeft) && (pPos->x + fWidth > fLeft))
 				{//ブロックの左端
 					pPos->x = fLeft - fWidth;
-					pMove->x = 0.0f;
+					pMove->x *= 0.5f;
 				}
 				else if ((pPosOld->x - fWidth >= fRight) && (pPos->x - fWidth < fRight))
 				{//ブロックの右端
 					pPos->x = fRight + fWidth;
-					pMove->x = 0.0f;
+					pMove->x *= 0.5f;
 				}
 			}
 		}

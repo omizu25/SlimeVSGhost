@@ -5,6 +5,7 @@
 //
 //--------------------------------------------------
 #include "block.h"
+#include "effect.h"
 #include "game.h"
 #include "gauge.h"
 #include "input.h"
@@ -115,6 +116,9 @@ void InitPlayer(void)
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
+
+	//エフェクトの設定処理
+	//SetEffect(s_Player.pos, D3DXVECTOR3(0.0f, 0.0f, 0.0f), D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f), s_Player.fWidth, s_Player.fHeight, 100, 0);
 
 	//ゲージの設定処理
 	SetGauge(GAUGEUSE_PLAYER, s_Player.nLife);
@@ -611,9 +615,9 @@ static void UpdateBound(void)
 
 	case JUMPSTATE_LAND:		//着地
 
-		s_Player.nCounterJump++;
+		//s_Player.nCounterJump++;
 
-		if (s_Player.nCounterJump >= 10)
+		if (s_Player.fWidth <= PLAYER_WIDTH * 0.5f)
 		{
 			s_Player.fHeight = PLAYER_HEIGHT;
 			s_Player.fWidth = PLAYER_WIDTH * 0.5f;
@@ -688,6 +692,7 @@ static void UpdateMotion(void)
 			}
 
 			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterMotion * 0.04f) * (D3DX_PI * 2.0f)) * 15.0f);
+			s_Player.fWidth = PLAYER_WIDTH * 0.5f + (sinf((s_Player.nCounterMotion * 0.02f) * (D3DX_PI * 2.0f)) * 2.0f);
 
 			break;
 
