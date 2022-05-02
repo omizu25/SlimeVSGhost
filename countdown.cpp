@@ -50,6 +50,7 @@ void InitCountdown(void)
 
 	s_nCountdown = 3;
 	s_nSecond = 0;
+	s_bCountdown = false;
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -107,7 +108,10 @@ void UninitCountdown(void)
 //--------------------------------------------------
 void UpdateCountdown(void)
 {
-
+	if (!s_bCountdown && s_nCountdown < 0)
+	{//スタートしてなくて、スタートの字が消えた
+		s_bCountdown = true;
+	}	
 }
 
 //--------------------------------------------------
@@ -170,4 +174,12 @@ void AddCountdown(int nValue)
 void SetCountdown(int nCountdown)
 {
 	s_nCountdown = nCountdown;
+}
+
+//--------------------------------------------------
+//カウントダウンしてるかどうか
+//--------------------------------------------------
+bool GetCountdown(void)
+{
+	return s_bCountdown;
 }

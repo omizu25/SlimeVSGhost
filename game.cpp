@@ -145,21 +145,24 @@ void UpdateGame(void)
 {
 	if (GetKeyboardTrigger(DIK_P) || GetJoypadTrigger(JOYKEY_START))
 	{//ポーズキー(Pキー)が押されたかどうか
-		s_bPause = !s_bPause;
+		if (GetCountdown())
+		{
+			s_bPause = !s_bPause;
 
-		if (s_bPause)
-		{//ポーズしてる
-			//サウンドの再生
-			PlaySound(SOUND_LABEL_SE_SYSTEM36);
-		}
-		else
-		{//ポーズしてない
-			//サウンドの再生
-			PlaySound(SOUND_LABEL_SE_SYSTEM20);
-		}
+			if (s_bPause)
+			{//ポーズしてる
+				//サウンドの再生
+				PlaySound(SOUND_LABEL_SE_SYSTEM36);
+			}
+			else
+			{//ポーズしてない
+				//サウンドの再生
+				PlaySound(SOUND_LABEL_SE_SYSTEM20);
+			}
 
-		//ポーズの初期化
-		InitPause();
+			//ポーズの初期化
+			InitPause();
+		}
 	}
 
 	if (!s_bPause)

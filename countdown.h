@@ -18,5 +18,6 @@ void UpdateCountdown(void);
 void DrawCountdown(void);
 void AddCountdown(int nValue);
 void SetCountdown(int Countdown);
+bool GetCountdown(void);
 
 #endif // !_COUNTDOWN_H_

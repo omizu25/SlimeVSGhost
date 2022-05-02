@@ -391,8 +391,11 @@ void UpdateRanking(void)
 			//フェードの設定
 			SetFade(MODE_TITLE);
 
-			//サウンドの再生
-			PlaySound(SOUND_LABEL_SE_SYSTEM49);
+			if (GetFade() == FADE_NONE)
+			{//何もしていない
+				//サウンドの再生
+				PlaySound(SOUND_LABEL_SE_SYSTEM49);
+			}
 		}
 		else
 		{//posが既定の位置にいない
