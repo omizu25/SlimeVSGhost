@@ -10,6 +10,22 @@
 #include "main.h"
 
 //--------------------------------------------------
+//マクロ定義
+//--------------------------------------------------
+#define REFLECT_BOUND		(0.8f)		//バウンドの跳ね返り量
+
+//--------------------------------------------------
+//ジャンプの状態を定義
+//--------------------------------------------------
+typedef enum
+{
+	JUMPSTATE_NONE = 0,		//何もしていない状態
+	JUMPSTATE_JUMP,			//ジャンプ状態
+	JUMPSTATE_BOUND,		//バウンド状態
+	JUMPSTATE_MAX
+}JUMPSTATE;
+
+//--------------------------------------------------
 //プレイヤーの構造体を定義
 //--------------------------------------------------
 typedef struct
@@ -17,10 +33,10 @@ typedef struct
 	D3DXVECTOR3		pos;				//現在の位置
 	D3DXVECTOR3		posOld;				//前回の位置
 	D3DXVECTOR3		move;				//移動量
-	bool			bjump;				//ジャンプ状態 [してる  : true してない  : false]
-	int				nCounterAnim;		//アニメーションカウンター
-	int				nPatternAnim;		//アニメーションパターンNo.
-	int				nDirectionMove;		//向き [0  : 右向き 1  : 左向き]
+	JUMPSTATE		jump;				//ジャンプ状態
+	float			fWidth;				//幅
+	float			fHeight;			//高さ
+	int				nCounterState;		//状態管理カウンター
 }Player;
 
 //--------------------------------------------------
@@ -31,6 +47,6 @@ void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
 Player GetPlayer(void);
-
+bool GetTexUsePlayer(void);
 
 #endif // !_PLAYER_H_

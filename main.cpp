@@ -4,9 +4,9 @@
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
+#include "block.h"
 #include "input.h"
 #include "main.h"
-#include "map.h"
 #include "player.h"
 
 //--------------------------------------------------
@@ -286,8 +286,8 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	//ジョイパッドの初期化処理
 	InitJoypad();
 
-	//マップの初期化処理
-	InitMap();
+	//ブロックの初期化処理
+	InitBlock();
 
 	//プレイヤーの初期化処理
 	InitPlayer();
@@ -310,8 +310,8 @@ void Uninit(void)
 	//ジョイパッドの終了処理
 	UninitJoypad();
 
-	//マップの終了処理
-	UninitMap();
+	//ブロックの終了処理
+	UninitBlock();
 
 	//プレイヤーの終了処理
 	UninitPlayer();
@@ -361,8 +361,8 @@ void Update(void)
 
 	if (!s_bPause)
 	{//ポーズしてない時
-		//マップの更新処理
-		UpdateMap();
+		//ブロックの更新処理
+		UpdateBlock();
 
 		//プレイヤーの更新処理
 		UpdatePlayer();
@@ -399,9 +399,8 @@ void Draw(void)
 		//-------------------------
 		//各種オブジェクトの描画処理
 		//-------------------------
-
-		//マップの描画処理
-		DrawMap();
+		//ブロックの描画処理
+		DrawBlock();
 
 		//プレイヤーの描画処理
 		DrawPlayer();
@@ -438,24 +437,63 @@ LPDIRECT3DDEVICE9 GetDevice(void)
 void DrawDebug(void)
 {
 	RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-	char aStr[80];
+	char aStr[256];
 	int nLength;
 
 	//文字列の代入
-	wsprintf(&aStr[0], "FPS            : %3d\n", s_nCountFPS);
+	wsprintf(&aStr[0], "FPS        [ F1 ]  : %3d\n", s_nCountFPS);
 	nLength = (int)strlen(&aStr[0]);		//文字数の取得
 
 	if (s_bPause)
 	{//ポーズしてる
-		wsprintf(&aStr[nLength], "ポーズ [ Ｐ ]  :【 ON 】\n");
+		wsprintf(&aStr[nLength], "ポーズ     [ Ｐ ]  :【 ON 】\n");
 	}
 	else
 	{//ポーズしてない
-		wsprintf(&aStr[nLength], "ポーズ [ Ｐ ]  :【 OFF 】\n");
+		wsprintf(&aStr[nLength], "ポーズ     [ Ｐ ]  :【 OFF 】\n");
+	}
+
+	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+
+	bool pTexUsePlayer = GetTexUsePlayer();		//プレイヤーのテクスチャを使用するかの取得
+
+	if (pTexUsePlayer)
+	{//プレイヤーのテクスチャ
+		wsprintf(&aStr[nLength], "Player.tex [ F2 ]  :【 ON 】\n");
+	}
+	else
+	{//プレイヤーのテクスチャ
+		wsprintf(&aStr[nLength], "Player.tex [ F2 ]  :【 OFF 】\n");
+	}
+
+	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+
+	bool pTexUseBlock = GetTexUseBlock();		//ブロックのテクスチャを使用するかの取得
+
+	if (pTexUseBlock)
+	{//ブロックのテクスチャ
+		wsprintf(&aStr[nLength], "Block.tex  [ F3 ]  :【 ON 】\n");
+	}
+	else
+	{//ブロックのテクスチャ
+		wsprintf(&aStr[nLength], "Block.tex  [ F3 ]  :【 OFF 】\n");
+	}
+
+	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+
+	bool pCollisionUse = GetCollisionUse();		//当たり判定を判断するかの取得
+
+	if (pCollisionUse)
+	{//当たり判定を判断する
+		wsprintf(&aStr[nLength], "Collision  [ F4 ]  :【 ON 】\n");
+	}
+	else
+	{//当たり判定を判断する
+		wsprintf(&aStr[nLength], "Collision  [ F4 ]  :【 OFF 】\n");
 	}
 
 	//テキストの描画
-	s_pFont->DrawText(NULL, &aStr[0], -1, &rect, DT_LEFT, D3DCOLOR_RGBA(255, 0, 0, 255));
+	s_pFont->DrawText(NULL, &aStr[0], -1, &rect, DT_LEFT, D3DCOLOR_RGBA(0, 255, 255, 255));
 }
 
 //--------------------------------------------------
