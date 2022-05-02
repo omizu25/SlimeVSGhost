@@ -20,8 +20,8 @@
 //-------------------------
 typedef enum
 {
-	ENEMYTYPE_YELLOW = 0,		//黄色
-	ENEMYTYPE_PURPLE,			//紫色
+	ENEMYTYPE_BOY = 0,		//男の子 (リリ)
+	ENEMYTYPE_GIRL,			//女の子 (ルル)
 	ENEMYTYPE_MAX
 }ENEMYTYPE;
 
@@ -57,11 +57,14 @@ typedef struct
 	ENEMYTYPE		type;				//種類
 	ENEMYSTATE		state;				//状態
 	ENEMYPOP		pop;				//ポップ場所
+	float			fWidth;				//幅
+	float			fHeight;			//高さ
 	int				nCounterState;		//状態管理カウンター
+	int				nCounterStop;		//ストップカウンター
 	int				nCounterAnim;		//アニメーションカウンター
 	int				nPatternAnim;		//アニメーションパターンNo.
-	bool			bDirection;			//向き [false  : 左向き true  : 右向き]
 	int				nLife;				//体力
+	bool			bDirection;			//向き [false  : 左向き true  : 右向き]
 	bool			bUse;				//使用しているかどうか
 }Enemy;
 

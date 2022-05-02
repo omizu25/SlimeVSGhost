@@ -10,6 +10,7 @@
 #include "fade.h"
 #include "game.h"
 #include "input.h"
+#include "item.h"
 #include "pause.h"
 #include "player.h"
 
@@ -21,6 +22,11 @@
 static GAMESTATE		s_gameState = GAMESTATE_NONE;		//ゲームの状態
 static int				s_nCounterState;					//状態管理カウンター
 static bool				s_bPause = false;					//ポーズ中かどうか [してる  : true してない  : false]
+
+//--------------------------------------------------
+//プロトタイプ宣言
+//--------------------------------------------------
+static void SetPop(void);
 
 //--------------------------------------------------
 //ゲームの初期化処理
@@ -36,17 +42,14 @@ void InitGame(void)
 	//ブロックの初期化処理
 	InitBlock();
 
+	//アイテムの初期化処理
+	InitItem();
+
 	//敵の初期化処理
 	InitEnemy();
 
-	float fYellowWidth = ENEMY_WIDTH * 0.5f;
-	float fPurpleWidth = SCREEN_WIDTH - (ENEMY_WIDTH * 0.5f);
-	float fYellowHeught = (SCREEN_HEIGHT / MAX_Y_BLOCK) * TOP_BLOCK;
-	float fPurpleHeught = (SCREEN_HEIGHT / MAX_Y_BLOCK) * BOTTOM_BLOCK;
-
-	//敵の設定処理
-	SetEnemy(D3DXVECTOR3(fYellowWidth, fYellowHeught, 0.0f), ENEMYTYPE_YELLOW);
-	SetEnemy(D3DXVECTOR3(fPurpleWidth, fPurpleHeught, 0.0f), ENEMYTYPE_PURPLE);
+	//色々な設定処理
+	SetPop();
 
 	//プレイヤーの初期化処理
 	InitPlayer();
@@ -71,6 +74,9 @@ void UninitGame(void)
 
 	//ブロックの終了処理
 	UninitBlock();
+
+	//アイテムの終了処理
+	UninitItem();
 
 	//敵の終了処理
 	UninitEnemy();
@@ -103,6 +109,9 @@ void UpdateGame(void)
 
 			//ブロックの更新処理
 			UpdateBlock();
+
+			//アイテムの更新処理
+			UpdateItem();
 
 			//敵の更新処理
 			UpdateEnemy();
@@ -148,6 +157,9 @@ void DrawGame(void)
 	//ブロックの描画処理
 	DrawBlock();
 
+	//アイテムの描画処理
+	DrawItem();
+
 	//敵の描画処理
 	DrawEnemy();
 
@@ -157,7 +169,7 @@ void DrawGame(void)
 	if (s_bPause)
 	{//ポーズ中
 		//ポーズの描画処理
-		//DrawPause();
+		DrawPause();
 	}
 }
 
@@ -177,4 +189,20 @@ void SetGameState(GAMESTATE state)
 void SetEnablePause(bool bPause)
 {
 	s_bPause = bPause;
+}
+
+//--------------------------------------------------
+//色々な設定処理
+//--------------------------------------------------
+static void SetPop(void)
+{
+	float fEnemyWidth = ENEMY_WIDTH * 0.5f;
+	float fBlockHeight = (SCREEN_HEIGHT / MAX_Y_BLOCK);
+
+	D3DXVECTOR3 posBoy  = D3DXVECTOR3(fEnemyWidth, fBlockHeight * TOP_BLOCK, 0.0f);
+	D3DXVECTOR3 posGirl = D3DXVECTOR3(SCREEN_WIDTH - fEnemyWidth, fBlockHeight * BOTTOM_BLOCK, 0.0f);
+
+	//敵の設定処理
+	SetEnemy(posBoy, ENEMYTYPE_BOY);
+	SetEnemy(posGirl, ENEMYTYPE_GIRL);
 }

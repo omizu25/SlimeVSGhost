@@ -6,6 +6,7 @@
 //--------------------------------------------------
 #include "block.h"
 #include "enemy.h"
+#include "item.h"
 #include "player.h"
 
 #include <assert.h>
@@ -14,17 +15,20 @@
 //--------------------------------------------------
 //マクロ定義
 //--------------------------------------------------
-#define MAX_U_PATTERN		(3)		//Uパターンの最大数
-#define MAX_V_PATTERN		(2)		//Vパターンの最大数
-#define CNT_INTERVAL		(7)		//カウンターのインターバル
+#define MAX_U_PATTERN		(3)			//Uパターンの最大数
+#define MAX_V_PATTERN		(2)			//Vパターンの最大数
+#define TEX_INTERVAL		(7)			//カウンターのインターバル
+#define STOP_TIME			(60)		//止まる時間
 
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
 static void InitStruct(Enemy *pEnemy);
+static void UpdateStop(Enemy *pEnemy);
 static void UpdateOffScreen(Enemy *pEnemy);
 static void UpdatePop(Enemy *pEnemy);
 static void UpdateTexAnim(VERTEX_2D *pVtx, Enemy *pEnemy);
+static void PopItem(Enemy *pEnemy);
 
 //--------------------------------------------------
 //スタティック変数
@@ -50,12 +54,12 @@ void InitEnemy(void)
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\obake003.png",
-		&s_pTexture[ENEMYTYPE_YELLOW]);
+		&s_pTexture[ENEMYTYPE_BOY]);
 
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\obake004.png",
-		&s_pTexture[ENEMYTYPE_PURPLE]);
+		&s_pTexture[ENEMYTYPE_GIRL]);
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -80,7 +84,7 @@ void InitEnemy(void)
 		InitStruct(pEnemy);
 
 		//頂点座標の設定処理
-		SetBottompos(pVtx, pEnemy->pos, ENEMY_WIDTH * 0.5f, ENEMY_HEIGHT);
+		SetBottompos(pVtx, pEnemy->pos, pEnemy->fWidth, pEnemy->fHeight);
 
 		//rhwの設定処理
 		Setrhw(pVtx);
@@ -138,8 +142,17 @@ void UpdateEnemy(void)
 
 		//敵が使用されている
 
+		//前回の位置の記憶
+		pEnemy->posOld = pEnemy->pos;
+
 		//位置の更新
 		pEnemy->pos += pEnemy->move;
+
+		//ストップ処理
+		UpdateStop(pEnemy);
+
+		//アイテムの当たり判定処理
+		CollisionItem(&pEnemy->pos, &pEnemy->posOld, &pEnemy->move, pEnemy->fWidth, pEnemy->fHeight);
 
 		//画面外処理
 		UpdateOffScreen(pEnemy);
@@ -152,7 +165,7 @@ void UpdateEnemy(void)
 		pVtx += (i * 4);		//該当の位置まで進める
 
 		//頂点座標の設定処理
-		SetBottompos(pVtx, pEnemy->pos, ENEMY_WIDTH * 0.5f, ENEMY_HEIGHT);
+		SetBottompos(pVtx, pEnemy->pos, pEnemy->fWidth, pEnemy->fHeight);
 
 		//テクスチャアニメーション処理
 		UpdateTexAnim(pVtx, pEnemy);
@@ -214,7 +227,7 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 
 		switch (type)
 		{
-		case ENEMYTYPE_YELLOW:		//黄色
+		case ENEMYTYPE_BOY:			//男の子
 
 			pEnemy->move = D3DXVECTOR3(3.0f, 0.0f, 0.0f);
 			pEnemy->bDirection = true;		//右向き
@@ -222,7 +235,7 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 
 			break;
 
-		case ENEMYTYPE_PURPLE:		//紫色
+		case ENEMYTYPE_GIRL:		//女の子
 
 			pEnemy->move = D3DXVECTOR3(-3.0f, 0.0f, 0.0f);
 			pEnemy->bDirection = false;		//左向き
@@ -236,6 +249,8 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 		}
 		
 		pEnemy->state = ENEMYSTATE_NORMAL;
+		pEnemy->fWidth = ENEMY_WIDTH * 0.5f;
+		pEnemy->fHeight = ENEMY_HEIGHT;
 		pEnemy->nCounterState = 0;
 		pEnemy->nCounterAnim = 0;
 		pEnemy->nPatternAnim = 0;
@@ -250,13 +265,16 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 		pVtx += (i * 4);		//該当の位置まで進める
 
 		//頂点座標の設定処理
-		SetBottompos(pVtx, pos, ENEMY_WIDTH * 0.5f, ENEMY_HEIGHT);
+		SetBottompos(pVtx, pos, pEnemy->fWidth, pEnemy->fHeight);
 
 		//テクスチャ座標の設定処理
 		Settex(pVtx, 0.01f, (1.0f / MAX_U_PATTERN) - 0.01f, 0.01f, 1.0f / MAX_V_PATTERN);
 
 		//頂点バッファをアンロックする
 		s_pVtxBuff->Unlock();
+
+		//アイテムのポップ処理
+		PopItem(pEnemy);
 
 		break;		//ここでfor文を抜ける
 	}
@@ -310,15 +328,45 @@ static void InitStruct(Enemy *pEnemy)
 	pEnemy->pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	pEnemy->posOld = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	pEnemy->move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pEnemy->type = ENEMYTYPE_YELLOW;
+	pEnemy->type = ENEMYTYPE_BOY;
 	pEnemy->state = ENEMYSTATE_NORMAL;
 	pEnemy->pop = ENEMYPOP_TOP;
+	pEnemy->fWidth = 0.0f;
+	pEnemy->fHeight = 0.0f;
 	pEnemy->nCounterState = 0;
+	pEnemy->nCounterStop = 0;
 	pEnemy->nCounterAnim = 0;
 	pEnemy->nPatternAnim = 0;
 	pEnemy->bDirection = false;
 	pEnemy->nLife = 0;
 	pEnemy->bUse = false;		//使用していない状態にする
+}
+
+//--------------------------------------------------
+//ストップ処理
+//--------------------------------------------------
+static void UpdateStop(Enemy *pEnemy)
+{
+	if (pEnemy->nCounterStop <= STOP_TIME)
+	{//まだ止まってない
+		float fEnemyWidth = ENEMY_WIDTH * 0.5f;
+		if (pEnemy->bDirection)
+		{//右向き
+			if (pEnemy->pos.x >= fEnemyWidth)
+			{
+				pEnemy->pos.x = fEnemyWidth;
+				pEnemy->nCounterStop++;
+			}
+		}
+		else
+		{//左向き
+			if (pEnemy->pos.x <= SCREEN_WIDTH - fEnemyWidth)
+			{
+				pEnemy->pos.x = SCREEN_WIDTH - fEnemyWidth;
+				pEnemy->nCounterStop++;
+			}
+		}
+	}
 }
 
 //--------------------------------------------------
@@ -342,6 +390,7 @@ static void UpdateOffScreen(Enemy *pEnemy)
 	{//右端か左端
 		pEnemy->bDirection = !pEnemy->bDirection;
 		pEnemy->move *= -1.0f;
+		pEnemy->nCounterStop = 0;
 		
 		//ポップ場所の処理
 		UpdatePop(pEnemy);
@@ -380,6 +429,9 @@ static void UpdatePop(Enemy *pEnemy)
 		assert(false);
 		break;
 	}
+
+	//アイテムのポップ処理
+	PopItem(pEnemy);
 }
 
 //--------------------------------------------------
@@ -389,7 +441,7 @@ static void UpdateTexAnim(VERTEX_2D *pVtx, Enemy *pEnemy)
 {
 	pEnemy->nCounterAnim++;		//カウンターを加算
 
-	if ((pEnemy->nCounterAnim % CNT_INTERVAL) == 0)
+	if ((pEnemy->nCounterAnim % TEX_INTERVAL) == 0)
 	{//一定時間経過した
 		//パターンNo.を更新する
 		pEnemy->nPatternAnim = (pEnemy->nPatternAnim + 1) % MAX_U_PATTERN;
@@ -399,5 +451,23 @@ static void UpdateTexAnim(VERTEX_2D *pVtx, Enemy *pEnemy)
 
 		//テクスチャ座標の設定処理
 		Settex(pVtx, fPattren + 0.01f, (fPattren + (1.0f / MAX_U_PATTERN)) - 0.01f, fDirection + 0.01f, fDirection + (1.0f / MAX_V_PATTERN));
+	}
+}
+
+//--------------------------------------------------
+//アイテムのポップ処理
+//--------------------------------------------------
+static void PopItem(Enemy *pEnemy)
+{
+	float fItemSize = ITEM_SIZE * 0.5f;
+
+	//アイテムの設定処理
+	if (pEnemy->bDirection)
+	{//右向き
+		SetItem(pEnemy->pos + D3DXVECTOR3(pEnemy->fWidth + fItemSize, -fItemSize, 0.0f));
+	}
+	else
+	{//左向き
+		SetItem(pEnemy->pos + D3DXVECTOR3(-pEnemy->fWidth - fItemSize, -fItemSize, 0.0f));
 	}
 }
