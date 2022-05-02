@@ -1,0 +1,113 @@
+//--------------------------------------------------
+//
+// ACG制作 ( setup.cpp )
+// Author  : katsuki mizuki
+//
+//--------------------------------------------------
+#include "setup.h"
+
+//--------------------------------------------------
+//頂点座標の設定処理 (真ん中に中心)
+//--------------------------------------------------
+void SetMiddlepos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
+{
+	pVtx[0].pos = pos + D3DXVECTOR3(-fWidth, -fHeight, 0.0f);
+	pVtx[1].pos = pos + D3DXVECTOR3(fWidth, -fHeight, 0.0f);
+	pVtx[2].pos = pos + D3DXVECTOR3(-fWidth, fHeight, 0.0f);
+	pVtx[3].pos = pos + D3DXVECTOR3(fWidth, fHeight, 0.0f);
+}
+
+//--------------------------------------------------
+//頂点座標の設定処理 (下に中心)
+//--------------------------------------------------
+void SetBottompos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
+{
+	pVtx[0].pos = pos + D3DXVECTOR3(-fWidth, -fHeight, 0.0f);
+	pVtx[1].pos = pos + D3DXVECTOR3(fWidth, -fHeight, 0.0f);
+	pVtx[2].pos = pos + D3DXVECTOR3(-fWidth, 0.0f, 0.0f);
+	pVtx[3].pos = pos + D3DXVECTOR3(fWidth, 0.0f, 0.0f);
+}
+
+//--------------------------------------------------
+//頂点カラーの設定処理
+//--------------------------------------------------
+void Setcol(VERTEX_2D *pVtx, float Red, float Green, float Blue, float Alpha)
+{
+	pVtx[0].col = D3DXCOLOR(Red, Green, Blue, Alpha);
+	pVtx[1].col = D3DXCOLOR(Red, Green, Blue, Alpha);
+	pVtx[2].col = D3DXCOLOR(Red, Green, Blue, Alpha);
+	pVtx[3].col = D3DXCOLOR(Red, Green, Blue, Alpha);
+}
+
+//--------------------------------------------------
+//テクスチャの設定処理
+//--------------------------------------------------
+void Settex(VERTEX_2D *pVtx, float ULeft, float URight, float VTop, float VBottom)
+{
+	pVtx[0].tex = D3DXVECTOR2(ULeft, VTop);
+	pVtx[1].tex = D3DXVECTOR2(URight, VTop);
+	pVtx[2].tex = D3DXVECTOR2(ULeft, VBottom);
+	pVtx[3].tex = D3DXVECTOR2(URight, VBottom);
+}
+
+//--------------------------------------------------
+//頂点座標の初期化処理
+//--------------------------------------------------
+void Initpos(VERTEX_2D *pVtx)
+{
+	pVtx[0].pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	pVtx[1].pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	pVtx[2].pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	pVtx[3].pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+}
+
+//--------------------------------------------------
+//rhwの初期化処理
+//--------------------------------------------------
+void Initrhw(VERTEX_2D *pVtx)
+{
+	pVtx[0].rhw = 1.0f;
+	pVtx[1].rhw = 1.0f;
+	pVtx[2].rhw = 1.0f;
+	pVtx[3].rhw = 1.0f;
+}
+
+//--------------------------------------------------
+//頂点カラーの初期化処理
+//--------------------------------------------------
+void Initcol(VERTEX_2D *pVtx)
+{
+	pVtx[0].col = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	pVtx[1].col = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	pVtx[2].col = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	pVtx[3].col = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+}
+
+//--------------------------------------------------
+//テクスチャの初期化処理
+//--------------------------------------------------
+void Inittex(VERTEX_2D *pVtx)
+{
+	pVtx[0].tex = D3DXVECTOR2(0.0f, 0.0f);
+	pVtx[1].tex = D3DXVECTOR2(1.0f, 0.0f);
+	pVtx[2].tex = D3DXVECTOR2(0.0f, 1.0f);
+	pVtx[3].tex = D3DXVECTOR2(1.0f, 1.0f);
+}
+
+//--------------------------------------------------
+//全ての初期化処理
+//--------------------------------------------------
+void InitAll(VERTEX_2D *pVtx)
+{
+	//頂点座標の初期化処理
+	Initpos(pVtx);
+
+	//rhwの初期化処理
+	Initrhw(pVtx);
+
+	//頂点カラーの初期化処理
+	Initcol(pVtx);
+
+	//テクスチャの初期化処理
+	Inittex(pVtx);
+}

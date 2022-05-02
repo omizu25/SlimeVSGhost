@@ -7,6 +7,7 @@
 #include "block.h"
 #include "input.h"
 #include "player.h"
+#include "setup.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -96,17 +97,8 @@ void InitBlock(void)
 		//構造体の初期化処理
 		InitStruct(i);
 
-		//頂点座標の設定処理
-		SetMiddlepos(pVtx, s_aBlock[i].pos, s_aBlock[i].fWidth, s_aBlock[i].fHeight);
-
-		//rhwの設定処理
-		Setrhw(pVtx);
-
-		//頂点カラーの設定処理
-		Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
-
-		//テクスチャ座標の設定処理
-		Settex(pVtx, 0.0f, 1.0f, 0.0f, 1.0f);
+		//全ての初期化処理
+		InitAll(pVtx);
 
 		pVtx += 4;		//頂点データのポインタを４つ分進める
 	}
@@ -247,9 +239,6 @@ void SetBlock(D3DXVECTOR3 pos, float fWidth, float fHeight)
 		//テクスチャ座標の設定処理
 		Settex(pVtx, 0.0f, fUTex, 0.0f, fVTex);
 
-		//頂点カラーの設定処理
-		Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
-
 		//頂点バッファをアンロックする
 		s_pVtxBuff->Unlock();
 
@@ -363,14 +352,14 @@ bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove,
 			}
 			else
 			{//ブロックに当たってない
-				//頂点カラーの設定処理
-				Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
+				//頂点カラーの初期化処理
+				Initcol(pVtx);
 			}
 		}
 		else
 		{
-			//頂点カラーの設定処理
-			Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
+			//頂点カラーの初期化処理
+			Initcol(pVtx);
 		}
 
 		//頂点バッファをアンロックする

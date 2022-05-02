@@ -6,6 +6,7 @@
 //--------------------------------------------------
 #include "item.h"
 #include "player.h"
+#include "setup.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -13,20 +14,24 @@
 //--------------------------------------------------
 //マクロ定義
 //--------------------------------------------------
-#define MAX_ITEM		(256)		//アイテムの最大数
+#define MAX_ITEM			(256)			//アイテムの最大数
+#define INHALE_DIV			(0.05f)			//吸い込みの分割数
+#define INHALE_DISTANCE		(350.0f)		//吸い込む距離
+#define MAX_INERTIA			(0.75f)			//慣性の最大値
+#define STER_MOVE			(10.0f)			//スターの移動量
 
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
-static void InitStruct(int i);
+static void InitStruct(Item *pItem);
 static void UpdateOffScreen(Item *pItem);
 
 //--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
-static LPDIRECT3DTEXTURE9			s_pTexture = NULL;		//テクスチャへのポインタ
-static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;		//頂点バッファのポインタ
-static Item							s_aItem[MAX_ITEM];		//アイテムの情報
+static LPDIRECT3DTEXTURE9			s_pTexture[ITEMTYPE_MAX];		//テクスチャへのポインタ
+static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;				//頂点バッファのポインタ
+static Item							s_aItem[MAX_ITEM];				//アイテムの情報
 
 //--------------------------------------------------
 //アイテムの初期化処理
@@ -36,11 +41,22 @@ void InitItem(void)
 	//デバイスへのポインタの取得
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
+	for (int i = 0; i < ITEMTYPE_MAX; i++)
+	{//メモリのクリア
+		memset(&s_pTexture[i], NULL, sizeof(LPDIRECT3DTEXTURE9));
+	}
+
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\block005.png",
-		&s_pTexture);
+		&s_pTexture[ITEMTYPE_BLOCK]);
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\Star002.png",
+		&s_pTexture[ITEMTYPE_STAR]);
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -59,20 +75,13 @@ void InitItem(void)
 	//アイテムの情報の初期化設定
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
+		Item *pItem = &s_aItem[i];		//アイテムの情報
+
 		//構造体の初期化処理
-		InitStruct(i);
+		InitStruct(pItem);
 
-		//頂点座標の設定処理
-		SetMiddlepos(pVtx, s_aItem[i].pos, s_aItem[i].fWidth, s_aItem[i].fHeight);
-
-		//rhwの設定処理
-		Setrhw(pVtx);
-
-		//頂点カラーの設定処理
-		Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
-
-		//テクスチャ座標の設定処理
-		Settex(pVtx, 0.0f, 1.0f, 0.0f, 1.0f);
+		//全ての初期化処理
+		InitAll(pVtx);
 
 		pVtx += 4;		//頂点データのポインタを４つ分進める
 	}
@@ -86,10 +95,13 @@ void InitItem(void)
 //--------------------------------------------------
 void UninitItem(void)
 {
-	if (s_pTexture != NULL)
-	{//テクスチャの破棄
-		s_pTexture->Release();
-		s_pTexture = NULL;
+	for (int i = 0; i < ITEMTYPE_MAX; i++)
+	{
+		if (s_pTexture[i] != NULL)
+		{//テクスチャの破棄
+			s_pTexture[i]->Release();
+			s_pTexture[i] = NULL;
+		}
 	}
 
 	if (s_pVtxBuff != NULL)
@@ -114,6 +126,15 @@ void UpdateItem(void)
 		}
 
 		//アイテムが使用されている
+
+		//位置を更新
+		pItem->pos += pItem->move;
+		
+		if (pItem->type == ITEMTYPE_BLOCK)
+		{//ブロックの時
+			//慣性・移動量を更新 (減衰させる)
+			pItem->move.x += (0.0f - pItem->move.x) * MAX_INERTIA;
+		}
 
 		//画面外処理
 		UpdateOffScreen(pItem);
@@ -147,13 +168,14 @@ void DrawItem(void)
 	//頂点フォーマットの設定
 	pDevice->SetFVF(FVF_VERTEX_2D);
 
-	//テクスチャの設定
-	pDevice->SetTexture(0, s_pTexture);
-
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
 		if (s_aItem[i].bUse)
 		{//アイテムが使用されている
+
+			//テクスチャの設定
+			pDevice->SetTexture(0, s_pTexture[s_aItem[i].type]);
+
 			//ポリゴンの描画
 			pDevice->DrawPrimitive(
 				D3DPT_TRIANGLESTRIP,		//プリミティブの種類
@@ -166,7 +188,7 @@ void DrawItem(void)
 //--------------------------------------------------
 //アイテムの設定処理
 //--------------------------------------------------
-void SetItem(D3DXVECTOR3 pos)
+void SetItem(D3DXVECTOR3 pos, ITEMTYPE type, bool bDirection)
 {
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
@@ -180,8 +202,10 @@ void SetItem(D3DXVECTOR3 pos)
 		//アイテムが使用されていない
 
 		pItem->pos = pos;
+		pItem->type = type;
 		pItem->fWidth = ITEM_SIZE * 0.5f;
 		pItem->fHeight = ITEM_SIZE * 0.5f;
+		pItem->bDirection = bDirection;
 		pItem->bUse = true;		//使用している状態にする
 
 		VERTEX_2D *pVtx;		//頂点情報へのポインタ
@@ -193,6 +217,28 @@ void SetItem(D3DXVECTOR3 pos)
 
 		//頂点座標の設定処理
 		SetMiddlepos(pVtx, pos, pItem->fWidth, pItem->fHeight);
+
+		switch (pItem->type)
+		{
+		case ITEMTYPE_BLOCK:		//ブロック
+			pItem->move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+
+			break;
+
+		case ITEMTYPE_STAR:			//スター
+
+			if (bDirection)
+			{//右向き
+				pItem->move = D3DXVECTOR3(STER_MOVE, 0.0f, 0.0f);
+			}
+			else
+			{//左向き
+				pItem->move = D3DXVECTOR3(-STER_MOVE, 0.0f, 0.0f);
+			}
+
+		default:
+			break;
+		}
 
 		//頂点バッファをアンロックする
 		s_pVtxBuff->Unlock();
@@ -245,14 +291,63 @@ void CollisionItem(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove, 
 }
 
 //--------------------------------------------------
+//アイテムの吸い込み処理
+//--------------------------------------------------
+void InhaleItem(D3DXVECTOR3 pos, ATTACKSTATE *pAttack, float fWidth, float fHeight, bool bDirection)
+{
+	for (int i = 0; i < MAX_ITEM; i++)
+	{
+		Item *pItem = &s_aItem[i];		//アイテムの情報
+
+		if (!pItem->bUse)
+		{//アイテムが使用されていない
+			continue;
+		}
+
+		//アイテムが使用されている
+
+		if (bDirection != pItem->bDirection)
+		{//向きが逆な時
+			if (pos.y >= pItem->pos.y && pos.y - fHeight <= pItem->pos.y)
+			{//高さがプレイヤーの範囲内
+				if ((!bDirection && pos.x >= pItem->pos.x) ||
+					(bDirection && pos.x <= pItem->pos.x))
+				{//左向きでプレイヤーより左にある、右向きでプレイヤーより右にある
+					float Difference = pos.x - pItem->pos.x;
+
+					if ((Difference <= 0.0f && Difference >= -INHALE_DISTANCE) ||
+						(Difference >= 0.0f && Difference <= INHALE_DISTANCE))
+					{//差が範囲内
+						pItem->move.x += Difference * INHALE_DIV;
+
+						float fLeft = pItem->pos.x - pItem->fWidth;
+						float fRight = pItem->pos.x + pItem->fWidth;
+
+						if ((pos.x - fWidth <= fRight) && (pos.x + fWidth >= fLeft))
+						{//アイテムとプレイヤーが重なった
+							pItem->bUse = false;		//使用していない状態にする
+							pItem->move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+							*pAttack = ATTACKSTATE_STORE;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+//--------------------------------------------------
 //構造体の初期化処理
 //--------------------------------------------------
-static void InitStruct(int i)
+static void InitStruct(Item *pItem)
 {
-	s_aItem[i].pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	s_aItem[i].fWidth = 0.0f;
-	s_aItem[i].fHeight = 0.0f;
-	s_aItem[i].bUse = false;		//使用していない状態にする
+	pItem->pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	pItem->move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+	pItem->type = ITEMTYPE_BLOCK;
+	pItem->fWidth = 0.0f;
+	pItem->fHeight = 0.0f;
+	pItem->bDirection = false;		//左向き
+	pItem->bUse = false;			//使用していない状態にする
 }
 
 //--------------------------------------------------

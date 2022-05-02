@@ -8,6 +8,7 @@
 #include "game.h"
 #include "input.h"
 #include "main.h"
+#include "player.h"
 
 #include <assert.h>
 
@@ -460,7 +461,12 @@ static void DrawDebug(void)
 	wsprintf(&aStr[0], "FPS  [ F1 ]  : %3d\n", s_nCountFPS);
 	nLength = (int)strlen(&aStr[0]);		//文字数の取得
 
-											//テキストの描画
+	Player *pPlayer = GetPlayer();
+
+	wsprintf(&aStr[nLength], "ATTACK       : %3d\n", pPlayer->attack);
+	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+
+	//テキストの描画
 	s_pFont->DrawText(NULL, &aStr[0], -1, &rect, DT_LEFT, D3DCOLOR_RGBA(0, 255, 255, 255));
 }
 
@@ -534,60 +540,4 @@ void SetMode(MODE mode)
 MODE GetMode(void)
 {
 	return s_mode;
-}
-
-//--------------------------------------------------
-//頂点座標の設定処理 (真ん中に中心)
-//--------------------------------------------------
-void SetMiddlepos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
-{
-	pVtx[0].pos = pos + D3DXVECTOR3(-fWidth, -fHeight, 0.0f);
-	pVtx[1].pos = pos + D3DXVECTOR3( fWidth, -fHeight, 0.0f);
-	pVtx[2].pos = pos + D3DXVECTOR3(-fWidth,  fHeight, 0.0f);
-	pVtx[3].pos = pos + D3DXVECTOR3( fWidth,  fHeight, 0.0f);
-}
-
-
-//--------------------------------------------------
-//頂点座標の設定処理 (下に中心)
-//--------------------------------------------------
-void SetBottompos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
-{
-	pVtx[0].pos = pos + D3DXVECTOR3(-fWidth, -fHeight, 0.0f);
-	pVtx[1].pos = pos + D3DXVECTOR3( fWidth, -fHeight, 0.0f);
-	pVtx[2].pos = pos + D3DXVECTOR3(-fWidth, 0.0f, 0.0f);
-	pVtx[3].pos = pos + D3DXVECTOR3( fWidth, 0.0f, 0.0f);
-}
-
-//--------------------------------------------------
-//rhwの設定処理
-//--------------------------------------------------
-void Setrhw(VERTEX_2D *pVtx)
-{
-	pVtx[0].rhw = 1.0f;
-	pVtx[1].rhw = 1.0f;
-	pVtx[2].rhw = 1.0f;
-	pVtx[3].rhw = 1.0f;
-}
-
-//--------------------------------------------------
-//頂点カラーの設定処理
-//--------------------------------------------------
-void Setcol(VERTEX_2D *pVtx, float Red, float Green, float Blue, float Alpha)
-{
-	pVtx[0].col = D3DXCOLOR(Red, Green, Blue, Alpha);
-	pVtx[1].col = D3DXCOLOR(Red, Green, Blue, Alpha);
-	pVtx[2].col = D3DXCOLOR(Red, Green, Blue, Alpha);
-	pVtx[3].col = D3DXCOLOR(Red, Green, Blue, Alpha);
-}
-
-//--------------------------------------------------
-//頂点カラーの設定処理
-//--------------------------------------------------
-void Settex(VERTEX_2D *pVtx, float ULeft, float URight, float VTop, float VBottom)
-{
-	pVtx[0].tex = D3DXVECTOR2(ULeft, VTop);
-	pVtx[1].tex = D3DXVECTOR2(URight, VTop);
-	pVtx[2].tex = D3DXVECTOR2(ULeft, VBottom);
-	pVtx[3].tex = D3DXVECTOR2(URight, VBottom);
 }

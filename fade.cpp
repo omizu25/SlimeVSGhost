@@ -6,6 +6,7 @@
 //--------------------------------------------------
 #include "fade.h"
 #include "input.h"
+#include "setup.h"
 
 //--------------------------------------------------
 //マクロ定義
@@ -55,8 +56,8 @@ void InitFade(MODE modeNext)
 	//頂点座標の設定処理
 	SetMiddlepos(pVtx, D3DXVECTOR3(fWidth, fHeight, 0.0f), fWidth, fHeight);
 
-	//rhwの設定処理
-	Setrhw(pVtx);
+	//rhwの初期化処理
+	Initrhw(pVtx);
 
 	//頂点カラーの設定処理
 	Setcol(pVtx, s_colorFade.r, s_colorFade.g, s_colorFade.b, s_colorFade.a);

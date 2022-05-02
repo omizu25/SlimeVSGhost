@@ -7,6 +7,7 @@
 #include "bg.h"
 #include "input.h"
 #include "player.h"
+#include "setup.h"
 
 //--------------------------------------------------
 //スタティック変数
@@ -44,14 +45,14 @@ void InitBG(void)
 	//頂点座標の設定処理
 	SetMiddlepos(pVtx, s_pos, fWidth, fHeight);
 
-	//rhwの設定処理
-	Setrhw(pVtx);
+	//rhwの初期化処理
+	Initrhw(pVtx);
 
 	//頂点カラーの設定処理
 	Setcol(pVtx, 1.0f, 1.0f, 0.5f, 1.0f);
 
-	//テクスチャ座標の設定処理
-	Settex(pVtx, 0.0f, 1.0f, 0.0f, 1.0f);
+	//テクスチャの初期化処理
+	Inittex(pVtx);
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();

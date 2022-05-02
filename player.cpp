@@ -6,7 +6,9 @@
 //--------------------------------------------------
 #include "block.h"
 #include "input.h"
+#include "item.h"
 #include "player.h"
+#include "setup.h"
 
 #include <assert.h>
 
@@ -22,12 +24,15 @@
 #define MAX_BOUND			(5.0f)			//バウンドの最大回数
 #define MAX_GRAVITY			(1.5f)			//重力の最大値
 #define MAX_INERTIA			(0.05f)			//慣性の最大値
+#define MAX_INTERVAL		(7)				//カウンターのインターバル
 
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
 static void InitStruct(void);
 static void UpdateMove(VERTEX_2D *pVtx);
+static void UpdateAttack(void);
+static bool UpdateUpDown(void);
 static void UpdateOffScreen(void);
 static void UpdateBound(void);
 static void UpdateMotion(void);
@@ -51,7 +56,7 @@ void InitPlayer(void)
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
-		"Data\\TEXTURE\\Player001.png",
+		"Data\\TEXTURE\\Player002.png",
 		&s_pTexture);
 
 	s_bTexUse = true;
@@ -76,14 +81,16 @@ void InitPlayer(void)
 	//頂点座標の設定処理
 	SetBottompos(pVtx, s_Player.pos, s_Player.fWidth, s_Player.fHeight);
 
-	//rhwの設定処理
-	Setrhw(pVtx);
+	//rhwの初期化処理
+	Initrhw(pVtx);
 
-	//頂点カラーの設定処理
-	Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
+	//頂点カラーの初期化処理
+	Initcol(pVtx);
+
+	float fTex = (float)s_Player.bDirection / MAX_U_PATTERN;
 
 	//テクスチャ座標の設定処理
-	Settex(pVtx, 0.0f, 1.0f / MAX_U_PATTERN, 0.0f, 1.0f);
+	Settex(pVtx, 0.0f + fTex, (1.0f / MAX_U_PATTERN) + fTex, 0.0f, 1.0f);
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
@@ -116,6 +123,27 @@ void UpdatePlayer(void)
 
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+	switch (s_Player.state)
+	{
+	case PLAYERSTATE_NORMAL:		//通常状態
+
+		break;
+
+	case PLAYERSTATE_DAMAGE:		//ダメージ状態
+
+		s_Player.nCounterState--;
+
+		if (s_Player.nCounterState <= 0)
+		{
+			//頂点カラーの設定処理
+			Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
+		}
+		
+		break;
+	default:
+		break;
+	}
 
 	//移動処理
 	UpdateMove(pVtx);
@@ -170,6 +198,39 @@ void DrawPlayer(void)
 		2);							//プリミティブ(ポリゴン)数
 }
 
+//-------------------------
+//プレイヤーのヒット処理
+//-------------------------
+void HitPlayer(int nDamage)
+{
+	if (s_Player.state == PLAYERSTATE_NORMAL)
+	{//表示されている
+		s_Player.nLife -= nDamage;
+
+		if (s_Player.nLife <= 0)
+		{//プレイヤーの体力がなくなった
+
+		}
+		else
+		{//まだ生きてる
+			s_Player.state = PLAYERSTATE_DAMAGE;
+
+			s_Player.nCounterState = 5;
+
+			VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+			//頂点情報をロックし、頂点情報へのポインタを取得
+			s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+			//頂点カラーの設定処理
+			Setcol(pVtx, 1.0f, 0.0f, 0.0f, 1.0f);
+
+			//頂点バッファをアンロックする
+			s_pVtxBuff->Unlock();
+		}
+	}
+}
+
 //--------------------------------------------------
 //プレイヤーの取得処理
 //--------------------------------------------------
@@ -199,9 +260,13 @@ static void InitStruct(void)
 	s_Player.posOld = D3DXVECTOR3(0.0f, 0.0f, 0.0f);		//前回の位置を初期化
 	s_Player.move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);			//移動量を初期化
 	s_Player.jump = JUMPSTATE_NONE;							//何もしていない状態にする
+	s_Player.attack = ATTACKSTATE_NONE;						//何もしていない状態にする
+	s_Player.state = PLAYERSTATE_NORMAL;					//通常状態にする
 	s_Player.fWidth = PLAYER_WIDTH * 0.5f;					//幅の初期化
 	s_Player.fHeight = PLAYER_HEIGHT;						//高さの初期化
 	s_Player.nCounterState = 0;								//カウンターの初期化
+	s_Player.nCounterAttack = 0;							//カウンターの初期化
+	s_Player.bDirection = true;								//右向き
 }
 
 //--------------------------------------------------
@@ -209,74 +274,191 @@ static void InitStruct(void)
 //--------------------------------------------------
 static void UpdateMove(VERTEX_2D *pVtx)
 {
-	//キー入力での移動
-	if (GetKeyboardPress(DIK_A) || GetJoypadPress(JOYKEY_LEFT))
-	{//Aキーが押された
-		switch (s_Player.jump)
-		{//移動量を更新 (増加させる)
-		case JUMPSTATE_NONE:		//何もしていない
+	//攻撃処理
+	UpdateAttack();
 
-			s_Player.move.x += sinf(-D3DX_PI * 0.5f) * PLAYER_MOVE;
-			s_Player.move.y += cosf(-D3DX_PI * 0.5f) * PLAYER_MOVE;
+	if (s_Player.attack != ATTACKSTATE_IN)
+	{//吸い込んでない
+		//キー入力での移動
+		if (GetKeyboardPress(DIK_A) || GetJoypadPress(JOYKEY_LEFT))
+		{//Aキーが押された
+			switch (s_Player.jump)
+			{//移動量を更新 (増加させる)
+			case JUMPSTATE_NONE:		//何もしていない
 
-			break;
+				s_Player.move.x += sinf(-D3DX_PI * 0.5f) * PLAYER_MOVE;
+				s_Player.move.y += cosf(-D3DX_PI * 0.5f) * PLAYER_MOVE;
 
-		case JUMPSTATE_JUMP:		//ジャンプ
-		case JUMPSTATE_BOUND:		//バウンド
+				break;
 
-			s_Player.move.x += sinf(-D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
-			s_Player.move.y += cosf(-D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
+			case JUMPSTATE_JUMP:		//ジャンプ
+			case JUMPSTATE_BOUND:		//バウンド
 
-			break;
+				s_Player.move.x += sinf(-D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
+				s_Player.move.y += cosf(-D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
 
-		default:
-			assert(false);
-			break;
+				break;
+
+			default:
+				assert(false);
+				break;
+			}
+
+			s_Player.bDirection = false;		//左向き
+
+		}
+		else if (GetKeyboardPress(DIK_D) || GetJoypadPress(JOYKEY_RIGHT))
+		{//Dキーが押された
+			switch (s_Player.jump)
+			{//移動量を更新 (増加させる)
+			case JUMPSTATE_NONE:		//何もしていない
+
+				s_Player.move.x += sinf(D3DX_PI * 0.5f) * PLAYER_MOVE;
+				s_Player.move.y += cosf(D3DX_PI * 0.5f) * PLAYER_MOVE;
+
+				break;
+
+			case JUMPSTATE_JUMP:		//ジャンプ
+			case JUMPSTATE_BOUND:		//バウンド
+
+				s_Player.move.x += sinf(D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
+				s_Player.move.y += cosf(D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
+
+				break;
+
+			default:
+				assert(false);
+				break;
+			}
+
+			s_Player.bDirection = true;		//右向き
 		}
 
+		float fTex = (float)s_Player.bDirection / MAX_U_PATTERN;
+
 		//テクスチャ座標の設定処理
-		Settex(pVtx, 1.0f / MAX_U_PATTERN, 1.0f, 0.0f, 1.0f);
-		
-	}
-	else if (GetKeyboardPress(DIK_D) || GetJoypadPress(JOYKEY_RIGHT))
-	{//Dキーが押された
-		switch (s_Player.jump)
-		{//移動量を更新 (増加させる)
-		case JUMPSTATE_NONE:		//何もしていない
+		Settex(pVtx, 0.0f + fTex, (1.0f / MAX_U_PATTERN) + fTex, 0.0f, 1.0f);
 
-			s_Player.move.x += sinf(D3DX_PI * 0.5f) * PLAYER_MOVE;
-			s_Player.move.y += cosf(D3DX_PI * 0.5f) * PLAYER_MOVE;
+		//ジャンプ、降りる処理
+		bool bDown = UpdateUpDown();
 
-			break;
+		//重力
+		s_Player.move.y += MAX_GRAVITY;
 
-		case JUMPSTATE_JUMP:		//ジャンプ
-		case JUMPSTATE_BOUND:		//バウンド
+		//スティックでの移動量の更新
+		s_Player.move.x += GetJoypadStick(JOYKEY_L_STICK).x;
 
-			s_Player.move.x += sinf(D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
-			s_Player.move.y += cosf(D3DX_PI * 0.5f) * PLAYER_MOVE * 0.75f;
+		//前回の位置の記憶
+		s_Player.posOld = s_Player.pos;
 
-			break;
+		//位置を更新
+		s_Player.pos.x += s_Player.move.x;
+		s_Player.pos.y += s_Player.move.y;
 
-		default:
-			assert(false);
-			break;
+		//ブロックの当たり判定処理
+		if (CollisionBlock(&s_Player.pos, &s_Player.posOld, &s_Player.move, s_Player.fWidth, s_Player.fHeight))
+		{//ブロックの上端にいる時
+			//バウンド処理
+			UpdateBound();
 		}
-		
-		//テクスチャ座標の設定処理
-		Settex(pVtx, 0.0f, 1.0f / MAX_U_PATTERN, 0.0f, 1.0f);
+		else
+		{//空中
+			if (s_Player.jump == JUMPSTATE_NONE)
+			{//何もしていない
+				s_Player.jump = JUMPSTATE_JUMP;
+				s_Player.fHeight = PLAYER_HEIGHT;
+				s_Player.nCounterState = 0;
+			}
+		}
+
+		if (bDown)
+		{//降りる
+			//ブロックの上端の当たり判定
+			CollisionTopBlock(&s_Player.pos, s_Player.fWidth, s_Player.fHeight);
+		}
+
+		//慣性・移動量を更新 (減衰させる)
+		s_Player.move.x += (0.0f - s_Player.move.x) * MAX_INERTIA;
 	}
 
+	//画面外処理
+	UpdateOffScreen();
+}
+
+//--------------------------------------------------
+//攻撃処理
+//--------------------------------------------------
+static void UpdateAttack(void)
+{
+	switch (s_Player.attack)
+	{
+	case ATTACKSTATE_NONE:			//何もしていない状態
+		if (s_Player.jump == JUMPSTATE_NONE)
+		{//何もしてない
+			if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_A))
+			{//ENTERキーが押された
+				s_Player.attack = ATTACKSTATE_IN;
+				s_Player.move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+			}
+		}
+
+		break;
+
+	case ATTACKSTATE_IN:			//吸い込んでる状態
+		if (GetKeyboardPress(DIK_RETURN) || GetJoypadPress(JOYKEY_A))
+		{//ENTERキーが押された
+			//アイテムの吸い込み処理
+			InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
+		}
+		else
+		{//吸い込めてない
+			s_Player.attack = ATTACKSTATE_NONE;
+		}
+
+		break;
+
+	case ATTACKSTATE_STORE:			//蓄えている状態
+		if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_A))
+		{//ENTERキーが押された
+			//アイテムの設定処理
+			SetItem(s_Player.pos - D3DXVECTOR3(0.0f, s_Player.fHeight * 0.5f, 0.0f), ITEMTYPE_STAR, s_Player.bDirection);
+			s_Player.attack = ATTACKSTATE_OUT;
+		}
+
+		break;
+
+	case ATTACKSTATE_OUT:			//吐き出す状態
+		s_Player.nCounterAttack++;
+
+		if (s_Player.nCounterAttack >= MAX_INTERVAL)
+		{
+			s_Player.attack = ATTACKSTATE_NONE;
+			s_Player.nCounterAttack = 0;
+		}
+
+		break;
+
+	default:
+		assert(false);
+		break;
+	}
+}
+
+//--------------------------------------------------
+//ジャンプ、降りる処理
+//--------------------------------------------------
+static bool UpdateUpDown(void)
+{
 	bool bDown = false;
 
-	//ジャンプ処理
-	if (s_Player.jump == JUMPSTATE_NONE)
-	{//何もしてない
+	if (s_Player.attack == ATTACKSTATE_NONE && s_Player.jump == JUMPSTATE_NONE)
+	{//何もしていない状態に
 		if (GetKeyboardPress(DIK_S) || GetJoypadPress(JOYKEY_DOWN))
-		{
+		{//Sキーが押された
 			bDown = true;
 		}
-		else if (GetKeyboardTrigger(DIK_SPACE) || GetKeyboardTrigger(DIK_W) || 
-				 GetJoypadTrigger(JOYKEY_B))
+		else if (GetKeyboardTrigger(DIK_SPACE) || GetKeyboardTrigger(DIK_W) ||
+			GetJoypadTrigger(JOYKEY_B))
 		{//スペースキー、Wキーが押された
 			s_Player.move.y += MAX_JUMP;
 			s_Player.jump = JUMPSTATE_JUMP;
@@ -285,46 +467,7 @@ static void UpdateMove(VERTEX_2D *pVtx)
 		}
 	}
 
-	//重力
-	s_Player.move.y += MAX_GRAVITY;
-
-	//スティックでの移動量の更新
-	s_Player.move.x += GetJoypadStick(JOYKEY_L_STICK).x;
-
-	//前回の位置の記憶
-	s_Player.posOld = s_Player.pos;
-
-	//位置を更新
-	s_Player.pos.x += s_Player.move.x;
-	s_Player.pos.y += s_Player.move.y;
-
-	//ブロックの当たり判定処理
-	if (CollisionBlock(&s_Player.pos, &s_Player.posOld, &s_Player.move, s_Player.fWidth, s_Player.fHeight))
-	{//ブロックの上端にいる時
-		//バウンド処理
-		UpdateBound();
-	}
-	else
-	{//空中
-		if (s_Player.jump == JUMPSTATE_NONE)
-		{//何もしていない
-			s_Player.jump = JUMPSTATE_JUMP;
-			s_Player.fHeight = PLAYER_HEIGHT;
-			s_Player.nCounterState = 0;
-		}
-	}
-
-	if (bDown)
-	{//降りるｄ
-		//ブロックの上端の当たり判定
-		CollisionTopBlock(&s_Player.pos, s_Player.fWidth, s_Player.fHeight);
-	}
-
-	//慣性・移動量を更新 (減衰させる)
-	s_Player.move.x += (0.0f - s_Player.move.x) * MAX_INERTIA;
-
-	//画面外処理
-	UpdateOffScreen();
+	return bDown;
 }
 
 //--------------------------------------------------
@@ -396,56 +539,63 @@ static void UpdateBound(void)
 //--------------------------------------------------
 static void UpdateMotion(void)
 {
-	Block *pBlock = GetBlock();		//ブロックの情報を授かる
-	float fPosY = 0.0f;
-	float fDif = 0.0f;
-	float fDifOld = SCREEN_HEIGHT;
+	if (s_Player.attack == ATTACKSTATE_IN || s_Player.attack == ATTACKSTATE_STORE)
+	{//吸い込んでる
+		s_Player.fHeight = PLAYER_HEIGHT * 1.5f;
+	}
+	else
+	{//吸い込んでいない
+		Block *pBlock = GetBlock();		//ブロックの情報を授かる
+		float fPosY = 0.0f;
+		float fDif = 0.0f;
+		float fDifOld = SCREEN_HEIGHT;
 
-	switch (s_Player.jump)
-	{
-	case JUMPSTATE_NONE:		//何もしていない
-		s_Player.nCounterState++;
-		s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterState * 0.01f) * (D3DX_PI * 2.0f)) * 5.0f);
-		break;
-
-	case JUMPSTATE_JUMP:		//ジャンプ
-	case JUMPSTATE_BOUND:		//バウンド
-
-		for (int i = 0; i < MAX_BLOCK; i++, pBlock++)
+		switch (s_Player.jump)
 		{
-			if (!pBlock->bUse)
-			{//ブロックが使用されていない
-				continue;
-			}
+		case JUMPSTATE_NONE:		//何もしていない
+			s_Player.nCounterState++;
+			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterState * 0.01f) * (D3DX_PI * 2.0f)) * 5.0f);
+			break;
 
-			//ブロックが使用されている
+		case JUMPSTATE_JUMP:		//ジャンプ
+		case JUMPSTATE_BOUND:		//バウンド
 
-			if (s_Player.pos.y < (pBlock->pos.y - pBlock->fHeight) &&
-				(s_Player.pos.x + s_Player.fWidth) > (pBlock->pos.x - pBlock->fWidth) &&
-				(s_Player.pos.x - s_Player.fWidth) < (pBlock->pos.x + pBlock->fWidth))
-			{//プレイヤーの下側のブロックの時
-				//差を計算
-				fDif = (pBlock->pos.y - pBlock->fHeight) - s_Player.pos.y;
+			for (int i = 0; i < MAX_BLOCK; i++, pBlock++)
+			{
+				if (!pBlock->bUse)
+				{//ブロックが使用されていない
+					continue;
+				}
 
-				if (fDif < fDifOld)
-				{//差が小さかったら交換
-					fDifOld = fDif;
-					fPosY = pBlock->pos.y - pBlock->fHeight;
+				//ブロックが使用されている
+
+				if (s_Player.pos.y < (pBlock->pos.y - pBlock->fHeight) &&
+					(s_Player.pos.x + s_Player.fWidth) >(pBlock->pos.x - pBlock->fWidth) &&
+					(s_Player.pos.x - s_Player.fWidth) < (pBlock->pos.x + pBlock->fWidth))
+				{//プレイヤーの下側のブロックの時
+					//差を計算
+					fDif = (pBlock->pos.y - pBlock->fHeight) - s_Player.pos.y;
+
+					if (fDif < fDifOld)
+					{//差が小さかったら交換
+						fDifOld = fDif;
+						fPosY = pBlock->pos.y - pBlock->fHeight;
+					}
 				}
 			}
+
+			if (s_Player.pos.y <= fPosY && s_Player.pos.y >= (fPosY - (SCREEN_HEIGHT / MAX_Y_BLOCK)))
+			{//下のブロックから１ブロック上の範囲なら
+				s_Player.nCounterState++;
+			}
+
+			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterState * 0.01f) * (D3DX_PI * 2.0f)) * 3.0f * -s_Player.move.y);
+
+			break;
+
+		default:
+			assert(false);
+			break;
 		}
-
-		if (s_Player.pos.y <= fPosY && s_Player.pos.y >= (fPosY - (SCREEN_HEIGHT / MAX_Y_BLOCK)))
-		{//下のブロックから１ブロック上の範囲なら
-			s_Player.nCounterState++;
-		}
-
-		s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterState * 0.01f) * (D3DX_PI * 2.0f)) * 3.0f * -s_Player.move.y);
-
-		break;
-
-	default:
-		assert(false);
-		break;
 	}
 }

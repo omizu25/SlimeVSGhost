@@ -8,6 +8,7 @@
 #include "game.h"
 #include "input.h"
 #include "pause.h"
+#include "setup.h"
 
 //--------------------------------------------------
 //スタティック変数
@@ -118,14 +119,11 @@ void InitPause(void)
 			SetMiddlepos(pVtx, s_posPause, PAUSE_WIDTH, PAUSE_HEIGHT);
 		}
 		
-		//rhwの設定処理
-		Setrhw(pVtx);
+		//rhwの初期化処理
+		Initrhw(pVtx);
 
 		//頂点カラーの設定処理
 		Setcol(pVtx, s_acolPause[i].r, s_acolPause[i].g, s_acolPause[i].b, s_acolPause[i].a);
-
-		//テクスチャ座標の設定処理
-		Settex(pVtx, 0.0f, 1.0f, 0.0f, 1.0f);
 
 		pVtx += 4;		//頂点データのポインタを４つ分進める
 	}
@@ -141,14 +139,14 @@ void InitPause(void)
 		//頂点座標の設定処理
 		SetMiddlepos(pVtx, s_aPause[i].pos, PAUSEMENU_WIDTH, PAUSEMENU_HEIGHT);
 
-		//rhwの設定処理
-		Setrhw(pVtx);
+		//rhwの初期化処理
+		Initrhw(pVtx);
 
 		//頂点カラーの設定処理
 		Setcol(pVtx, s_aPause[i].col.r, s_aPause[i].col.g, s_aPause[i].col.b, s_aPause[i].col.a);
 
-		//テクスチャ座標の設定処理
-		Settex(pVtx, 0.0f, 1.0f, 0.0f, 1.0f);
+		//テクスチャの初期化処理
+		Inittex(pVtx);
 
 		pVtx += 4;		//頂点データのポインタを４つ分進める
 	}

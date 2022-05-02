@@ -8,6 +8,7 @@
 #include "enemy.h"
 #include "item.h"
 #include "player.h"
+#include "setup.h"
 
 #include <assert.h>
 #include <time.h>
@@ -83,17 +84,8 @@ void InitEnemy(void)
 		//構造体の初期化処理
 		InitStruct(pEnemy);
 
-		//頂点座標の設定処理
-		SetBottompos(pVtx, pEnemy->pos, pEnemy->fWidth, pEnemy->fHeight);
-
-		//rhwの設定処理
-		Setrhw(pVtx);
-
-		//頂点カラーの設定処理
-		Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
-
-		//テクスチャ座標の設定処理
-		Settex(pVtx, 0.01f, (1.0f / MAX_U_PATTERN) - 0.01f, 0.01f, 1.0f / MAX_V_PATTERN);
+		//全ての初期化処理
+		InitAll(pVtx);
 
 		pVtx += 4;		//頂点データのポインタを４つ分進める
 	}
@@ -464,10 +456,10 @@ static void PopItem(Enemy *pEnemy)
 	//アイテムの設定処理
 	if (pEnemy->bDirection)
 	{//右向き
-		SetItem(pEnemy->pos + D3DXVECTOR3(pEnemy->fWidth + fItemSize, -fItemSize, 0.0f));
+		SetItem(pEnemy->pos + D3DXVECTOR3(pEnemy->fWidth + fItemSize, -fItemSize, 0.0f), ITEMTYPE_BLOCK, pEnemy->bDirection);
 	}
 	else
 	{//左向き
-		SetItem(pEnemy->pos + D3DXVECTOR3(-pEnemy->fWidth - fItemSize, -fItemSize, 0.0f));
+		SetItem(pEnemy->pos + D3DXVECTOR3(-pEnemy->fWidth - fItemSize, -fItemSize, 0.0f), ITEMTYPE_BLOCK, pEnemy->bDirection);
 	}
 }
