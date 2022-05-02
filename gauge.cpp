@@ -14,7 +14,7 @@
 //マクロ定義
 //--------------------------------------------------
 #define MAX_GAUGE			(32)			//ゲージの最大数
-#define GAUGE_WIDTH			(2.0f)			//ゲージの幅
+#define GAUGE_WIDTH			(2.5f)			//ゲージの幅
 
 //--------------------------------------------------
 //スタティック変数
@@ -231,7 +231,7 @@ void SetGauge(GAUGEUSE use, int nLife)
 			{
 			case GAUGEUSE_PLAYER:		//プレイヤー
 
-				pGauge->pos = D3DXVECTOR3(fWidth * (MAX_X_BLOCK * 0.093f), fHeight * 2.0f, 0.0f);
+				pGauge->pos = D3DXVECTOR3(fWidth * (MAX_X_BLOCK * 0.05f), fHeight * 2.0f, 0.0f);
 
 				break;
 

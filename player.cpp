@@ -48,7 +48,6 @@ static void UpdateMotion(void);
 static LPDIRECT3DTEXTURE9			s_pTexture = NULL;			//テクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;			//頂点バッファのポインタ
 static Player						s_Player;					//プレイヤーの情報
-static bool							s_bTexUse;					//テクスチャの使用するかどうか
 
 //--------------------------------------------------
 //プレイヤーの初期化処理
@@ -63,8 +62,6 @@ void InitPlayer(void)
 		pDevice,
 		"Data\\TEXTURE\\Player002.png",
 		&s_pTexture);
-
-	s_bTexUse = true;
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -146,15 +143,6 @@ void UpdatePlayer(void)
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
-
-#ifdef  _DEBUG
-
-	if (GetKeyboardTrigger(DIK_F2))
-	{//F2キー(F2キー)が押されたかどうか
-		s_bTexUse = !s_bTexUse;
-	}
-
-#endif //  _DEBUG
 }
 
 //--------------------------------------------------
@@ -194,14 +182,7 @@ void DrawPlayer(void)
 	}
 	
 	//テクスチャの設定
-	if (s_bTexUse)
-	{//使用する
-		pDevice->SetTexture(0, s_pTexture);
-	}
-	else
-	{//使用しない
-		pDevice->SetTexture(0, NULL);
-	}
+	pDevice->SetTexture(0, s_pTexture);
 
 	//ポリゴンの描画
 	pDevice->DrawPrimitive(
@@ -259,14 +240,6 @@ void HitPlayer(int nDamage)
 			s_pVtxBuff->Unlock();
 		}
 	}
-}
-
-//--------------------------------------------------
-//テクスチャを使用するかの取得処理
-//--------------------------------------------------
-bool GetTexUsePlayer(void)
-{
-	return s_bTexUse;
 }
 
 //--------------------------------------------------

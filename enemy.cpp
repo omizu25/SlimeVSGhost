@@ -10,8 +10,10 @@
 #include "gauge.h"
 #include "item.h"
 #include "player.h"
+#include "ranking.h"
 #include "result.h"
 #include "setup.h"
+#include "time.h"
 
 #include <assert.h>
 #include <time.h>
@@ -306,73 +308,79 @@ void HitEnemy(int nCntEnemy, int nDamage)
 {
 	Enemy *pEnemy = &s_aEnemy[nCntEnemy];
 
-	pEnemy->nLife -= nDamage;
-
-	switch (pEnemy->type)
+	if (pEnemy->state == ENEMYSTATE_NORMAL)
 	{
-	case ENEMYTYPE_BOY:			//男の子
+		pEnemy->nLife -= nDamage;
 
-		//ゲージの減算処理
-		SubGauge(GAUGEUSE_BOY, pEnemy->nLife);
-
-		break;
-
-	case ENEMYTYPE_GIRL:		//女の子
-
-		//ゲージの減算処理
-		SubGauge(GAUGEUSE_GIRL, pEnemy->nLife);
-
-		break;
-
-	default:
-		assert(false);
-		break;
-	}
-
-	if (pEnemy->nLife <= 0)
-	{//敵の体力がなくなった
-		pEnemy->bUse = false;		//使用していない状態にする
-
-		int nUse = 0;
-
-		for (int i = 0; i < ENEMYTYPE_MAX; i++)
+		switch (pEnemy->type)
 		{
-			if (s_aEnemy[i].bUse)
-			{//敵が使用されている
-				continue;
+		case ENEMYTYPE_BOY:			//男の子
+
+			//ゲージの減算処理
+			SubGauge(GAUGEUSE_BOY, pEnemy->nLife);
+
+			break;
+
+		case ENEMYTYPE_GIRL:		//女の子
+
+			//ゲージの減算処理
+			SubGauge(GAUGEUSE_GIRL, pEnemy->nLife);
+
+			break;
+
+		default:
+			assert(false);
+			break;
+		}
+
+		if (pEnemy->nLife <= 0)
+		{//敵の体力がなくなった
+			pEnemy->bUse = false;		//使用していない状態にする
+
+			int nUse = 0;
+
+			for (int i = 0; i < ENEMYTYPE_MAX; i++)
+			{
+				if (s_aEnemy[i].bUse)
+				{//敵が使用されている
+					continue;
+				}
+
+				//敵が使用されていない
+				nUse++;
 			}
 
-			//敵が使用されていない
-			nUse++;
+			if (nUse >= ENEMYTYPE_MAX)
+			{//全員使用されていない
+				//リザルトの設定処理
+				SetResult(RESULT_WIN);
+
+				//ゲームの設定処理
+				SetGameState(GAMESTATE_END);
+
+				//ランキングの設定処理
+				SetRanking(GetTime());
+			}
 		}
+		else
+		{//まだ生きてる
+			pEnemy->state = ENEMYSTATE_DAMAGE;
 
-		if (nUse >= ENEMYTYPE_MAX)
-		{//全員使用されていない
-			//リザルトの設定処理
-			SetResult(RESULT_WIN);
+			pEnemy->nCounterState = 0;
 
-			//ゲームの設定処理
-			SetGameState(GAMESTATE_END);
+			VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+			//頂点情報をロックし、頂点情報へのポインタを取得
+			s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+			pVtx += (nCntEnemy * 4);		//該当の位置まで進める
+
+			//頂点カラーの設定処理
+			Setcol(pVtx, 1.0f, 0.0f, 0.0f, 1.0f);
+
+			//頂点バッファをアンロックする
+			s_pVtxBuff->Unlock();
 		}
-	}
-	else
-	{//まだ生きてる
-		pEnemy->state = ENEMYSTATE_DAMAGE;
-
-		pEnemy->nCounterState = 0;
-
-		VERTEX_2D *pVtx;		//頂点情報へのポインタ
-
-		//頂点情報をロックし、頂点情報へのポインタを取得
-		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
-
-		pVtx += (nCntEnemy * 4);		//該当の位置まで進める
-
-		//頂点カラーの設定処理
-		Setcol(pVtx, 1.0f, 0.0f, 0.0f, 1.0f);
-
-		//頂点バッファをアンロックする
-		s_pVtxBuff->Unlock();
 	}
 }
 
@@ -500,12 +508,11 @@ static void UpdateCollision(Enemy *pEnemy)
 	if (pEnemy->pos.y <= (pPlayer->pos.y + pEnemy->fHeight) &&
 		pEnemy->pos.y >= (pPlayer->pos.y - pPlayer->fHeight) &&
 		pEnemy->pos.x <= (pPlayer->pos.x + pPlayer->fWidth + pEnemy->fWidth) &&
-		pEnemy->pos.x >= (pPlayer->pos.x - pPlayer->fWidth - pEnemy->fWidth) &&
-		pPlayer->state == PLAYERSTATE_NORMAL)
+		pEnemy->pos.x >= (pPlayer->pos.x - pPlayer->fWidth - pEnemy->fWidth))
 	{//プレイヤーに敵が当たった時
 
-	 //プレイヤーのヒット処理
-		HitPlayer(10);
+		//プレイヤーのヒット処理
+		HitPlayer(20);
 	}
 }
 

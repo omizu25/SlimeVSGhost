@@ -6,12 +6,14 @@
 //--------------------------------------------------
 #include "bg.h"
 #include "block.h"
+#include "colon.h"
 #include "enemy.h"
 #include "fade.h"
 #include "game.h"
 #include "gauge.h"
 #include "input.h"
 #include "item.h"
+#include "number.h"
 #include "pause.h"
 #include "player.h"
 #include "result.h"
@@ -45,7 +47,13 @@ void InitGame(void)
 	//ゲージの初期化処理
 	InitGauge();
 
-	//タイムの初期化
+	//数の初期化処理
+	InitNumber();
+
+	//コロンの初期化処理
+	InitColon();
+
+	//タイムの初期化処理
 	InitTime();
 
 	//ブロックの初期化処理
@@ -99,8 +107,11 @@ void UninitGame(void)
 	//ゲージの終了処理
 	UninitGauge();
 
-	//タイムの終了処理
-	UninitTime();
+	//数の終了処理
+	UninitNumber();
+
+	//コロンの終了処理
+	UninitColon();
 }
 
 //--------------------------------------------------
@@ -126,6 +137,9 @@ void UpdateGame(void)
 
 		case GAMESTATE_NORMAL:		//通常状態
 
+			//タイムの加算処理
+			AddTime(1);
+
 			//背景の更新処理
 			UpdateBG();
 
@@ -144,8 +158,11 @@ void UpdateGame(void)
 			//ゲージの更新処理
 			UpdateGauge();
 
-			//タイムの更新処理
-			UpdateTime();
+			//数の更新処理
+			UpdateNumber();
+
+			//コロンの更新処理
+			UpdateColon();
 
 			break;
 
@@ -201,8 +218,11 @@ void DrawGame(void)
 	//ゲージの描画処理
 	DrawGauge();
 
-	//タイムの描画処理
-	DrawTime();
+	//数の描画処理
+	DrawNumber();
+
+	//コロンの描画処理
+	DrawColon();
 
 	if (s_bPause)
 	{//ポーズ中

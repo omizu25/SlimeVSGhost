@@ -9,6 +9,7 @@
 #include "input.h"
 #include "main.h"
 #include "player.h"
+#include "ranking.h"
 #include "result.h"
 #include "title.h"
 
@@ -291,6 +292,9 @@ static HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	//ジョイパッドの初期化処理
 	InitJoypad();
 
+	//ランキングのリセット
+	ResetRanking();
+
 	//フェードの設定
 	InitFade(s_mode);
 	
@@ -320,6 +324,12 @@ static void Uninit(void)
 
 	//リザルトの終了処理
 	UninitResult();
+
+	//ランキングの終了処理
+	UninitRanking();
+
+	//ランキングのセーブ
+	SaveRanking();
 
 	if (s_pFont != NULL)
 	{//デバッグ表示用フォントの破棄
@@ -373,6 +383,7 @@ static void Update(void)
 		break;
 
 	case MODE_RANKING:		//ランキング
+		UpdateRanking();
 		break;
 
 	default:
@@ -432,6 +443,7 @@ static void Draw(void)
 			break;
 
 		case MODE_RANKING:		//ランキング
+			DrawRanking();
 			break;
 
 		default:
@@ -518,6 +530,7 @@ void SetMode(MODE mode)
 		break;
 
 	case MODE_RANKING:		//ランキング
+		UninitRanking();
 		break;
 
 	default:
@@ -544,6 +557,7 @@ void SetMode(MODE mode)
 		break;
 
 	case MODE_RANKING:		//ランキング
+		InitRanking();
 		break;
 
 	default:

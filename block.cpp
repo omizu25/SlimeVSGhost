@@ -16,7 +16,7 @@
 //マクロ定義
 //--------------------------------------------------
 #define FILE_DATA				(1024)					//ファイルのデータ数
-#define BlOCK_FILE		"data/test_map.txt"				//マップのテキスト名
+#define FILE_NAME		"data/test_map.txt"				//マップのパス
 #define MAX_TEX			(BLOCKTYPE_MAX - 1)				//テクスチャの最大数
 
 //--------------------------------------------------
@@ -33,8 +33,6 @@ static LPDIRECT3DTEXTURE9			s_pTexture[MAX_TEX];		//テクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;			//頂点バッファのポインタ
 static Block						s_aBlock[MAX_BLOCK];		//ブロックの情報
 static bool							s_bThrough;					//ブロックが通り抜けるか [false :通り抜けない true : 通り抜ける]
-static bool							s_bTexUse;					//テクスチャの使用するかどうか
-static bool							s_bCollisionUse;			//当たり判定を判断するかどうか
 
 //--------------------------------------------------
 //ブロックの初期化処理
@@ -45,8 +43,6 @@ void InitBlock(void)
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
 	s_bThrough = false;
-	s_bTexUse = true;
-	s_bCollisionUse = false;
 
 	for (int i = 0; i < MAX_TEX; i++)
 	{//メモリのクリア
@@ -141,20 +137,6 @@ void UpdateBlock(void)
 		//下がるときの当たり判定処理
 		DownCollision();
 	}
-
-#ifdef  _DEBUG
-
-	if (GetKeyboardTrigger(DIK_F3))
-	{//F3キー(F3キー)が押されたかどうか
-		s_bTexUse = !s_bTexUse;
-	}
-
-	if (GetKeyboardTrigger(DIK_F4))
-	{//F4キー(F4キー)が押されたかどうか
-		s_bCollisionUse = !s_bCollisionUse;
-	}
-
-#endif //  _DEBUG
 }
 
 //--------------------------------------------------
@@ -174,14 +156,7 @@ void DrawBlock(void)
 	for (int i = 0; i < MAX_TEX; i++)
 	{
 		//テクスチャの設定
-		if (s_bTexUse)
-		{//使用する
-			pDevice->SetTexture(0, s_pTexture[i]);
-		}
-		else
-		{//使用しない
-			pDevice->SetTexture(0, NULL);
-		}
+		pDevice->SetTexture(0, s_pTexture[i]);
 
 		//ブロックの描画
 		for (int j = 0; j < MAX_BLOCK; j++)
@@ -255,22 +230,6 @@ Block *GetBlock(void)
 }
 
 //--------------------------------------------------
-//テクスチャを使用するかの取得処理
-//--------------------------------------------------
-bool GetTexUseBlock(void)
-{
-	return s_bTexUse;
-}
-
-//--------------------------------------------------
-//当たり判定を判断するかの取得処理
-//--------------------------------------------------
-bool GetCollisionUse(void)
-{
-	return s_bCollisionUse;
-}
-
-//--------------------------------------------------
 //ブロックの当たり判定処理
 //--------------------------------------------------
 bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove, float fWidth, float fHeight)
@@ -288,8 +247,6 @@ bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove,
 
 		//ブロックが使用されている
 
-		bool bCollision = false;
-
 		float fLeft = pBlock->pos.x - pBlock->fWidth;
 		float fRight = pBlock->pos.x + pBlock->fWidth;
 		float fTop = pBlock->pos.y - pBlock->fHeight;
@@ -303,7 +260,6 @@ bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove,
 				{//当たり判定あり
 					pPos->y = fTop;
 					bIsLanding = true;
-					bCollision = true;
 				}
 			}
 			else if ((pPosOld->y - fHeight >= fBottom) && (pPos->y - fHeight < fBottom))
@@ -312,7 +268,6 @@ bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove,
 				{//指定の種類
 					pPos->y = fBottom + fHeight;
 					pMove->y *= -REFLECT_BOUND;
-					bCollision = true;
 				}
 			}
 		}
@@ -325,45 +280,14 @@ bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove,
 				{//ブロックの左端
 					pPos->x = fLeft - fWidth;
 					pMove->x = 0.0f;
-					bCollision = true;
 				}
 				else if ((pPosOld->x - fWidth >= fRight) && (pPos->x - fWidth < fRight))
 				{//ブロックの右端
 					pPos->x = fRight + fWidth;
 					pMove->x = 0.0f;
-					bCollision = true;
 				}
 			}
 		}
-
-		VERTEX_2D *pVtx;		//頂点情報へのポインタ
-
-		//頂点情報をロックし、頂点情報へのポインタを取得
-		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
-
-		pVtx += (i * 4);		//該当の位置まで進める
-
-		if (s_bCollisionUse)
-		{
-			if (bCollision)
-			{//ブロックに当たった
-				//頂点カラーの設定処理
-				Setcol(pVtx, 0.75f, 0.0f, 0.75f, 1.0f);
-			}
-			else
-			{//ブロックに当たってない
-				//頂点カラーの初期化処理
-				Initcol(pVtx);
-			}
-		}
-		else
-		{
-			//頂点カラーの初期化処理
-			Initcol(pVtx);
-		}
-
-		//頂点バッファをアンロックする
-		s_pVtxBuff->Unlock();
 	}
 
 	return bIsLanding;
@@ -452,7 +376,7 @@ static void InitType(void)
 	BLOCKTYPE aBlock[MAX_Y_BLOCK][MAX_X_BLOCK];		//ブロックの種類
 
 	//ファイルを開く
-	pBlockFile = fopen(BlOCK_FILE, "r");
+	pBlockFile = fopen(FILE_NAME, "r");
 
 	if (pBlockFile != NULL)
 	{//ファイルが開いた場合

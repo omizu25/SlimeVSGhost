@@ -78,6 +78,5 @@ void UpdatePlayer(void);
 void DrawPlayer(void);
 Player *GetPlayer(void);
 void HitPlayer(int nDamage);
-bool GetTexUsePlayer(void);
 
 #endif // !_PLAYER_H_

@@ -385,12 +385,11 @@ static void UpdateCollision(Item *pItem)
 		pItem->pos.y >= (pPlayer->pos.y - pPlayer->fHeight - pItem->fHeight) &&
 		pItem->pos.x <= (pPlayer->pos.x + pPlayer->fWidth + pItem->fWidth) &&
 		pItem->pos.x >= (pPlayer->pos.x - pPlayer->fWidth - pItem->fWidth) &&
-		pPlayer->state == PLAYERSTATE_NORMAL && pPlayer->attack != ATTACKSTATE_IN &&
-		pItem->type == ITEMTYPE_BLOCK && pItem->move.x == 0.0f)
+		pPlayer->attack != ATTACKSTATE_IN && pItem->type == ITEMTYPE_BLOCK && pItem->move.x == 0.0f)
 	{//プレイヤーにブロックが当たった時
 
 		//プレイヤーのヒット処理
-		HitPlayer(10);
+		HitPlayer(20);
 
 		pItem->bUse = false;		//使用していない状態にする
 	}
@@ -410,11 +409,11 @@ static void UpdateCollision(Item *pItem)
 			pItem->pos.y >= (pEnemy->pos.y - pEnemy->fHeight - pItem->fHeight) &&
 			pItem->pos.x <= (pEnemy->pos.x + pEnemy->fWidth + pItem->fWidth) &&
 			pItem->pos.x >= (pEnemy->pos.x - pEnemy->fWidth - pItem->fWidth) &&
-			pEnemy->state == ENEMYSTATE_NORMAL && pItem->type == ITEMTYPE_STAR)
+			pItem->type == ITEMTYPE_STAR)
 		{//敵にスターが当たった時
 
 			//敵のヒット処理
-			HitEnemy(i, 10);
+			HitEnemy(i, 20);
 
 			pItem->bUse = false;		//使用していない状態にする
 		}

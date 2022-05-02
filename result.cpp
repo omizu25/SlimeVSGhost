@@ -9,6 +9,8 @@
 #include "result.h"
 #include "setup.h"
 
+#include <assert.h>
+
 //--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
@@ -103,8 +105,26 @@ void UpdateResult(void)
 {
 	if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
 	{//決定キー(ENTERキー)が押されたかどうか
-		//フェード設定
-		SetFade(MODE_TITLE);
+		switch (s_Result)
+		{
+		case RESULT_WIN:		//勝ち
+			//フェード設定
+			SetFade(MODE_RANKING);
+			break;
+
+		case RESULT_LOSE:		//負け
+			//フェード設定
+			SetFade(MODE_TITLE);
+			break;
+
+		case RESULT_NONE:		//何もしていない状態
+
+			//breakなし
+
+		default:
+			assert(false);
+			break;
+		}
 	}
 }
 
