@@ -268,6 +268,9 @@ void DrawPlayer(void)
 //--------------------------------------------------
 void SetPlayer(PLAYERSTATE state)
 {
+	//メモリのクリア
+	memset(&s_Player, NULL, sizeof(Player));
+
 	s_Player.state = state;
 
 	if (state == PLAYERSTATE_PV)
@@ -279,6 +282,8 @@ void SetPlayer(PLAYERSTATE state)
 
 		s_Player.pos.x = SCREEN_WIDTH * 0.15f;
 		s_Player.pos.y = SCREEN_HEIGHT;
+		s_Player.fWidth = PLAYER_WIDTH * 0.5f;
+		s_Player.fHeight = PLAYER_HEIGHT;
 
 		//頂点座標の設定処理
 		SetBottompos(pVtx, s_Player.pos, s_Player.fWidth, s_Player.fHeight);
@@ -571,9 +576,6 @@ static void UpdateMove(VERTEX_2D *pVtx)
 
 		//ジャンプ、降りる処理
 		bDown = UpdateUpDown();
-
-		//スティックでの移動量の更新
-		s_Player.move.x += GetJoypadStick(JOYKEY_L_STICK).x;
 	}
 
 	//重力

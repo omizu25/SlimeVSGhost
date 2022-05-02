@@ -68,6 +68,7 @@ typedef struct
 	int				nPatternAnim;		//アニメーションパターンNo.
 	int				nLife;				//体力
 	bool			bDirection;			//向き [false  : 左向き true  : 右向き]
+	bool			bAcceleration;		//加速 [false  : してない true  : した]
 	bool			bUse;				//使用しているかどうか
 }Enemy;
 

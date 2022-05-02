@@ -110,6 +110,9 @@ void InitBlock(void)
 //--------------------------------------------------
 void UninitBlock(void)
 {
+	//ƒƒ‚ƒŠ‚ÌƒNƒŠƒA
+	memset(&s_aBlock[0], NULL, sizeof(s_aBlock));
+
 	for (int i = 0; i < MAX_TEX; i++)
 	{
 		if (s_pTexture[i] != NULL)

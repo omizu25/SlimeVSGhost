@@ -45,6 +45,7 @@ static void PopItem(Enemy *pEnemy);
 static LPDIRECT3DTEXTURE9			s_pTexture[ENEMYTYPE_MAX];		//テクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;				//頂点バッファのポインタ
 static Enemy						s_aEnemy[ENEMYTYPE_MAX];		//敵の情報
+static int							s_nCntDamage;					//ダメージを受けた敵数
 
 //--------------------------------------------------
 //敵の初期化処理
@@ -67,6 +68,8 @@ void InitEnemy(void)
 		pDevice,
 		"Data\\TEXTURE\\obake004.png",
 		&s_pTexture[ENEMYTYPE_GIRL]);
+
+	s_nCntDamage = 0;
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -127,6 +130,21 @@ void UninitEnemy(void)
 //--------------------------------------------------
 void UpdateEnemy(void)
 {
+	int nCntUse = 0;
+
+	for (int i = 0; i < ENEMYTYPE_MAX; i++)
+	{
+		Enemy *pEnemy = &s_aEnemy[i];
+
+		if (!pEnemy->bUse)
+		{//敵が使用されていない
+			continue;
+		}
+
+		//敵が使用されている
+		nCntUse++;
+	}
+
 	for (int i = 0; i < ENEMYTYPE_MAX; i++)
 	{
 		Enemy *pEnemy = &s_aEnemy[i];
@@ -140,6 +158,12 @@ void UpdateEnemy(void)
 
 		if (pEnemy->state != ENEMYSTATE_DEATH && pEnemy->state != ENEMYSTATE_PV)
 		{//生きてる
+			if (s_nCntDamage == nCntUse && !pEnemy->bAcceleration)
+			{//全員ダメージを受けててまだ加速してない
+				pEnemy->move.x *= 2.0f;
+				pEnemy->bAcceleration = true;
+			}
+
 			//前回の位置の記憶
 			pEnemy->posOld = pEnemy->pos;
 
@@ -237,6 +261,7 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 		pEnemy->nCounterAnim = 0;
 		pEnemy->nPatternAnim = 0;
 		pEnemy->nLife = 100;
+		pEnemy->bAcceleration = false;
 		pEnemy->bUse = true;		//使用している状態にする
 
 		switch (type)
@@ -457,11 +482,26 @@ static void UpdateStop(Enemy *pEnemy)
 static void UpdateOffScreen(Enemy *pEnemy)
 {
 	//画面端処理
-	if ((pEnemy->pos.x >= SCREEN_WIDTH + ENEMY_WIDTH) || (pEnemy->pos.x <= -ENEMY_WIDTH))
-	{//右端か左端
+	if (pEnemy->pos.x >= SCREEN_WIDTH + ENEMY_WIDTH)
+	{//右端
 		pEnemy->bDirection = !pEnemy->bDirection;
-		pEnemy->move *= -1.0f;
+		pEnemy->pos.x = SCREEN_WIDTH + ENEMY_WIDTH;
+		pEnemy->move.x = -3.0f;
 		pEnemy->nCounterStop = 0;
+		pEnemy->bAcceleration = false;
+		s_nCntDamage = 0;
+		
+		//ポップ場所の処理
+		UpdatePop(pEnemy);
+	}
+	else if (pEnemy->pos.x <= -ENEMY_WIDTH)
+	{//左端
+		pEnemy->bDirection = !pEnemy->bDirection;
+		pEnemy->pos.x = -ENEMY_WIDTH;
+		pEnemy->move.x = 3.0f;
+		pEnemy->nCounterStop = 0;
+		pEnemy->bAcceleration = false;
+		s_nCntDamage = 0;
 		
 		//ポップ場所の処理
 		UpdatePop(pEnemy);
@@ -546,6 +586,7 @@ static void UpdateState(VERTEX_2D *pVtx, Enemy *pEnemy)
 			pEnemy->state = ENEMYSTATE_NORMAL;
 
 			pEnemy->nCounterState = 0;
+			s_nCntDamage++;
 		}
 
 		break;
