@@ -10,6 +10,7 @@
 #include "item.h"
 #include "player.h"
 #include "setup.h"
+#include "sound.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -97,6 +98,9 @@ void InitItem(void)
 //--------------------------------------------------
 void UninitItem(void)
 {
+	//サウンドの停止
+	StopSound();
+
 	for (int i = 0; i < ITEMTYPE_MAX; i++)
 	{
 		if (s_pTexture[i] != NULL)
@@ -477,6 +481,9 @@ static void UpdateCollision(Item *pItem)
 
 			//パーティクルの設定処理
 			SetParticle(pItem->pos, EFFECTTYPE_EXPLOSION, pItem->bDirection);
+
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_MAGICAL29);
 		}
 	}
 

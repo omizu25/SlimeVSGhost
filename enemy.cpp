@@ -412,17 +412,6 @@ static void UpdateStop(Enemy *pEnemy)
 static void UpdateOffScreen(Enemy *pEnemy)
 {
 	//画面端処理
-	if (pEnemy->pos.y >= SCREEN_HEIGHT)
-	{//下端
-		pEnemy->pos.y = SCREEN_HEIGHT;
-		pEnemy->move.y = 0.0f;
-	}
-	else if (pEnemy->pos.y <= ENEMY_HEIGHT)
-	{//上端
-		pEnemy->pos.y = ENEMY_HEIGHT;
-		pEnemy->move.y = 0.0f;
-	}
-
 	if ((pEnemy->pos.x >= SCREEN_WIDTH + ENEMY_WIDTH) || (pEnemy->pos.x <= -ENEMY_WIDTH))
 	{//右端か左端
 		pEnemy->bDirection = !pEnemy->bDirection;

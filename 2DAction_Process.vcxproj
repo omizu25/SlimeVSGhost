@@ -151,6 +151,7 @@
     <ClCompile Include="bg.cpp" />
     <ClCompile Include="block.cpp" />
     <ClCompile Include="colon.cpp" />
+    <ClCompile Include="countdown.cpp" />
     <ClCompile Include="effect.cpp" />
     <ClCompile Include="enemy.cpp" />
     <ClCompile Include="fade.cpp" />
@@ -165,6 +166,7 @@
     <ClCompile Include="ranking.cpp" />
     <ClCompile Include="result.cpp" />
     <ClCompile Include="setup.cpp" />
+    <ClCompile Include="sound.cpp" />
     <ClCompile Include="time.cpp" />
     <ClCompile Include="title.cpp" />
     <ClCompile Include="tutorial.cpp" />
@@ -173,6 +175,7 @@
     <ClInclude Include="bg.h" />
     <ClInclude Include="block.h" />
     <ClInclude Include="colon.h" />
+    <ClInclude Include="countdown.h" />
     <ClInclude Include="effect.h" />
     <ClInclude Include="enemy.h" />
     <ClInclude Include="fade.h" />
@@ -187,6 +190,7 @@
     <ClInclude Include="ranking.h" />
     <ClInclude Include="result.h" />
     <ClInclude Include="setup.h" />
+    <ClInclude Include="sound.h" />
     <ClInclude Include="time.h" />
     <ClInclude Include="title.h" />
     <ClInclude Include="tutorial.h" />

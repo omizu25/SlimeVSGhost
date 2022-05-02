@@ -7,6 +7,7 @@
 #include "bg.h"
 #include "block.h"
 #include "colon.h"
+#include "countdown.h"
 #include "effect.h"
 #include "enemy.h"
 #include "fade.h"
@@ -18,9 +19,15 @@
 #include "pause.h"
 #include "player.h"
 #include "result.h"
+#include "sound.h"
 #include "time.h"
 
 #include <assert.h>
+
+//--------------------------------------------------
+//マクロ定義
+//--------------------------------------------------
+#define MAX_END_COUNTER		(60)		//終了状態のカウンターの最大数
 
 //--------------------------------------------------
 //スタティック変数
@@ -57,6 +64,9 @@ void InitGame(void)
 	//タイムの初期化処理
 	InitTime();
 
+	//カウントダウンの初期化処理
+	InitCountdown();
+
 	//ブロックの初期化処理
 	InitBlock();
 
@@ -75,7 +85,10 @@ void InitGame(void)
 	//プレイヤーの初期化処理
 	InitPlayer();
 
-	s_gameState = GAMESTATE_NORMAL;		//通常状態に設定
+	//サウンドの再生
+	PlaySound(SOUND_LABEL_MWTPG);
+
+	s_gameState = GAMESTATE_START;		//開始状態に設定
 
 	s_nCounterState = 0;				//カウンターの初期化
 
@@ -90,6 +103,12 @@ void InitGame(void)
 //--------------------------------------------------
 void UninitGame(void)
 {
+	//サウンドの停止
+	StopSound();
+
+	//カウントダウンの終了処理
+	UninitCountdown();
+
 	//ポーズの終了処理
 	UninitPause();
 
@@ -130,6 +149,17 @@ void UpdateGame(void)
 	{//ポーズキー(Pキー)が押されたかどうか
 		s_bPause = !s_bPause;
 
+		if (s_bPause)
+		{//ポーズしてる
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_SYSTEM36);
+		}
+		else
+		{//ポーズしてない
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_SYSTEM20);
+		}
+
 		//ポーズの初期化
 		InitPause();
 	}
@@ -142,7 +172,20 @@ void UpdateGame(void)
 
 			break;
 
+		case GAMESTATE_START:		//開始状態
+			//カウントダウンの加算処理
+			AddCountdown(1);
+
+			//カウントダウンの更新処理
+			UpdateCountdown();
+			break;
+
 		case GAMESTATE_NORMAL:		//通常状態
+			//カウントダウンの加算処理
+			AddCountdown(1);
+
+			//カウントダウンの更新処理
+			UpdateCountdown();
 
 			//タイムの加算処理
 			AddTime(1);
@@ -181,9 +224,12 @@ void UpdateGame(void)
 			//ゲージの更新処理
 			UpdateGauge();
 
+			//エフェクトの更新処理
+			UpdateEffect();
+
 			s_nCounterState++;
 
-			if (s_nCounterState >= 45)
+			if (s_nCounterState >= MAX_END_COUNTER)
 			{
 				s_gameState = GAMESTATE_NONE;		//何もしていない状態に設定
 
@@ -246,14 +292,17 @@ void DrawGame(void)
 	//コロンの描画処理
 	DrawColon();
 
+	//カウントダウンの描画処理
+	DrawCountdown();
+
 	if (s_bPause)
 	{//ポーズ中
-#ifdef DEBUG
+//#ifdef DEBUG
 
 		//ポーズの描画処理
 		DrawPause();
 
-#endif // DEBUG
+//#endif // DEBUG
 	}
 }
 

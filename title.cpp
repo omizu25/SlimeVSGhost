@@ -9,6 +9,7 @@
 #include "ranking.h"
 #include "result.h"
 #include "setup.h"
+#include "sound.h"
 #include "title.h"
 
 //--------------------------------------------------
@@ -197,6 +198,9 @@ void InitTitle(void)
 
 	//頂点バッファをアンロックする
 	s_pVtxBuffMenu->Unlock();
+
+	//サウンドの再生
+	PlaySound(SOUND_LABEL_IN_THE_WAY);
 }
 
 //--------------------------------------------------
@@ -204,6 +208,9 @@ void InitTitle(void)
 //--------------------------------------------------
 void UninitTitle(void)
 {
+	//サウンドの停止
+	StopSound();
+
 	if (s_pVtxBuffBG != NULL)
 	{//背景の頂点バッファの破棄
 		s_pVtxBuffBG->Release();
@@ -352,6 +359,9 @@ static void UpdateInput(VERTEX_2D *pVtx)
 
 		//頂点カラーの設定処理
 		Setcol(pVtx, s_col.r, s_col.g, s_col.b, s_col.a);
+
+		//サウンドの再生
+		PlaySound(SOUND_LABEL_SE_SYSTEM40);
 	}
 
 	if (GetKeyboardTrigger(DIK_W) || GetJoypadTrigger(JOYKEY_UP))
@@ -399,6 +409,9 @@ static void UpdateMenu(void)
 		}
 
 		s_fChange = 1.0f;
+
+		//サウンドの再生
+		PlaySound(SOUND_LABEL_SE_SYSTEM49);
 	}
 }
 

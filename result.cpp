@@ -8,6 +8,7 @@
 #include "input.h"
 #include "result.h"
 #include "setup.h"
+#include "sound.h"
 
 #include <assert.h>
 
@@ -73,6 +74,18 @@ void InitResult(void)
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
+
+	if (s_Result == RESULT_LOSE)
+	{//負け
+		//サウンドの再生
+		PlaySound(SOUND_LABEL_MYSTERYMAN);
+	}
+	else if (s_Result == RESULT_WIN)
+	{//勝ち
+		//サウンドの再生
+		PlaySound(SOUND_LABEL_START_BEETS);
+	}
+	
 }
 
 //--------------------------------------------------
@@ -80,6 +93,9 @@ void InitResult(void)
 //--------------------------------------------------
 void UninitResult(void)
 {
+	//サウンドの停止
+	StopSound();
+
 	for (int i = 0; i < RESULT_MAX; i++)
 	{
 		if (s_pTexture[i] != NULL)

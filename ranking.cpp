@@ -10,6 +10,7 @@
 #include "number.h"
 #include "ranking.h"
 #include "setup.h"
+#include "sound.h"
 #include "time.h"
 
 #include <stdio.h>
@@ -235,7 +236,7 @@ void InitRanking(void)
 			fWidthInterval = (NUMBER_WIDTH * j) + (WIDTH_INTERVAL * (j / 2)) + (WIDTH_INTERVAL * i);
 
 			//数の設定処理
-			SetNumber(s_pos + D3DXVECTOR3(-fWidthInterval, fHeightInterval, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, aNumber[j], j, i);
+			SetRightNumber(s_pos + D3DXVECTOR3(-fWidthInterval, fHeightInterval, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, aNumber[j], j, i);
 
 			if ((j % 2 == 0) && (j != 0))
 			{//２の倍数
@@ -267,7 +268,7 @@ void InitRanking(void)
 		s_pVtxBuffRank->Unlock();
 
 		//数の設定処理
-		SetNumber(posRank + D3DXVECTOR3(-RANK_WIDTH, fHeightInterval, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, i + 1, 0, -2);
+		SetRightNumber(posRank + D3DXVECTOR3(-RANK_WIDTH, fHeightInterval, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, i + 1, 0, -2);
 	}
 
 	/* ↓New↓ */
@@ -302,6 +303,9 @@ void InitRanking(void)
 
 	//頂点バッファをアンロックする
 	s_pVtxBuffNew->Unlock();
+
+	//サウンドの再生
+	PlaySound(SOUND_LABEL_GO_TO_SEE_HER);
 }
 
 //--------------------------------------------------
@@ -309,6 +313,9 @@ void InitRanking(void)
 //--------------------------------------------------
 void UninitRanking(void)
 {
+	//サウンドの停止
+	StopSound();
+
 	if (s_pVtxBuffBG != NULL)
 	{//背景の頂点バッファの破棄
 		s_pVtxBuffBG->Release();
@@ -384,6 +391,9 @@ void UpdateRanking(void)
 		{//posが既定の位置にいる
 			//フェードの設定
 			SetFade(MODE_TITLE);
+
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_SYSTEM49);
 		}
 		else
 		{//posが既定の位置にいない

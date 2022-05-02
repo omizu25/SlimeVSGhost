@@ -48,7 +48,7 @@ void InitTime(void)
 		float fInterval = (NUMBER_WIDTH * i) + (WIDTH_INTERVAL * (i / 2));
 
 		//êîÇÃê›íËèàóù
-		SetNumber(D3DXVECTOR3(s_pos.x - fInterval, s_pos.y, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, aNumber[i], i, 0);
+		SetRightNumber(D3DXVECTOR3(s_pos.x - fInterval, s_pos.y, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, aNumber[i], i, 0);
 
 		if ((i % 2 == 0) && (i != 0))
 		{//ÇQÇÃî{êî

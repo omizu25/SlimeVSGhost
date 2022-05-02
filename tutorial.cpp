@@ -8,6 +8,7 @@
 #include "input.h"
 #include "number.h"
 #include "setup.h"
+#include "sound.h"
 #include "tutorial.h"
 
 //--------------------------------------------------
@@ -271,8 +272,11 @@ void InitTutorial(void)
 	for (int i = 0; i < MENU_MAX; i++)
 	{
 		//数の設定処理
-		SetNumber(D3DXVECTOR3(posNumber.x + ((NUMBER_WIDTH * i) * 2.0f), posNumber.y, 0.0f), NUMBER_WIDTH, fHeightNumber, i + 1, i, 0);
+		SetRightNumber(D3DXVECTOR3(posNumber.x + ((NUMBER_WIDTH * i) * 2.0f), posNumber.y, 0.0f), NUMBER_WIDTH, fHeightNumber, i + 1, i, 0);
 	}
+
+	//サウンドの再生
+	PlaySound(SOUND_LABEL_RISE);
 }
 
 //--------------------------------------------------
@@ -280,6 +284,9 @@ void InitTutorial(void)
 //--------------------------------------------------
 void UninitTutorial(void)
 {
+	//サウンドの停止
+	StopSound();
+
 	if (s_pVtxBuffBG != NULL)
 	{//背景の頂点バッファの破棄
 		s_pVtxBuffBG->Release();
@@ -459,30 +466,45 @@ static void UpdateInput(void)
 	{//決定キー(ENTERキー)が押されたかどうか
 		//フェードの設定
 		SetFade(MODE_TITLE);
+
+		//サウンドの再生
+		PlaySound(SOUND_LABEL_SE_SYSTEM49);
 	}
 
 	if (GetKeyboardTrigger(DIK_A) || GetKeyboardTrigger(DIK_LEFT) ||
 		GetJoypadTrigger(JOYKEY_LEFT))
 	{//Aキーが押された
-		if (s_move.x >= MIN_MOVE)
-		{//押されたが２回以上
-			s_move.x = MAX_MOVE;
-		}
-		else
-		{//１回目
-			s_move.x = MIN_MOVE;
+		if (s_pos.x != SCREEN_WIDTH)
+		{
+			if (s_move.x >= MIN_MOVE)
+			{//押されたが２回以上
+				s_move.x = MAX_MOVE;
+			}
+			else
+			{//１回目
+				s_move.x = MIN_MOVE;
+
+				//サウンドの再生
+				PlaySound(SOUND_LABEL_SE_SYSTEM40);
+			}
 		}
 	}
 	else if (GetKeyboardTrigger(DIK_D) || GetKeyboardTrigger(DIK_RIGHT) ||
 		GetJoypadTrigger(JOYKEY_RIGHT))
 	{//Dキーが押された
-		if (s_move.x <= -MIN_MOVE)
-		{//押されたが２回以上
-			s_move.x = -MAX_MOVE;
-		}
-		else
-		{//１回目
-			s_move.x = -MIN_MOVE;
+		if (s_pos.x != 0.0f)
+		{
+			if (s_move.x <= -MIN_MOVE)
+			{//押されたが２回以上
+				s_move.x = -MAX_MOVE;
+			}
+			else
+			{//１回目
+				s_move.x = -MIN_MOVE;
+
+				//サウンドの再生
+				PlaySound(SOUND_LABEL_SE_SYSTEM40);
+			}
 		}
 	}
 }

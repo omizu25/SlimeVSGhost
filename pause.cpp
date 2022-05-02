@@ -9,6 +9,7 @@
 #include "input.h"
 #include "pause.h"
 #include "setup.h"
+#include "sound.h"
 
 //--------------------------------------------------
 //マクロ定義
@@ -206,6 +207,9 @@ void InitPause(void)
 //--------------------------------------------------
 void UninitPause(void)
 {
+	//サウンドの停止
+	StopSound();
+
 	if (s_pVtxBuff != NULL)
 	{//頂点バッファの破棄
 		s_pVtxBuff->Release();
@@ -332,6 +336,9 @@ static void UpdateInput(VERTEX_2D *pVtx)
 		//頂点カラーの設定処理
 		Setcol(pVtx, s_aPause[s_Menu].col.r, s_aPause[s_Menu].col.g,
 			s_aPause[s_Menu].col.b, s_aPause[s_Menu].col.a);
+
+		//サウンドの再生
+		PlaySound(SOUND_LABEL_SE_SYSTEM40);
 	}
 
 	if (GetKeyboardTrigger(DIK_W) || GetJoypadTrigger(JOYKEY_UP))
@@ -376,6 +383,9 @@ static void UpdateMenu(void)
 		}
 
 		s_fPausecolor = 1.0f;
+
+		//サウンドの再生
+		PlaySound(SOUND_LABEL_SE_SYSTEM49);
 	}
 }
 

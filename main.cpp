@@ -12,6 +12,7 @@
 #include "player.h"
 #include "ranking.h"
 #include "result.h"
+#include "sound.h"
 #include "title.h"
 #include "tutorial.h"
 
@@ -294,6 +295,9 @@ static HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	//ジョイパッドの初期化処理
 	InitJoypad();
 
+	//サウンドの初期化処理
+	InitSound(hWnd);
+
 	//ランキングのリセット
 	ResetRanking();
 
@@ -317,6 +321,9 @@ static void Uninit(void)
 
 	//ジョイパッドの終了処理
 	UninitJoypad();
+
+	//サウンドの終了処理
+	UninitSound();
 
 	//タイトルの終了処理
 	UninitTitle();

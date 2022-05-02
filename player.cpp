@@ -13,6 +13,7 @@
 #include "player.h"
 #include "result.h"
 #include "setup.h"
+#include "sound.h"
 
 #include <assert.h>
 
@@ -126,6 +127,9 @@ void InitPlayer(void)
 //--------------------------------------------------
 void UninitPlayer(void)
 {
+	//サウンドの停止
+	StopSound();
+
 	for (int i = 0; i < MAX_TEX; i++)
 	{
 		if (s_pTexture[i] != NULL)
@@ -505,13 +509,16 @@ static void UpdateAttack(void)
 		{//ENTERキーが押された
 			//アイテムの吸い込み処理
 			InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
+
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_PUNCH);
+
 			s_Player.nCounterAttack = 0;
 		}
 		else if (s_Player.nCounterAttack <= MAX_INTERVAL)
 		{//余韻中
 			//アイテムの吸い込み処理
 			InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
-			
 		}
 		else
 		{//吸い込めてない
@@ -570,6 +577,9 @@ static bool UpdateUpDown(void)
 			s_Player.jump = JUMPSTATE_JUMP;
 			s_Player.fHeight = PLAYER_HEIGHT;
 			s_Player.nCounterMotion = 0;
+
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_JUMP);
 		}
 	}
 

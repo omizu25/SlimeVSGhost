@@ -154,7 +154,7 @@ void DrawNumber(void)
 //--------------------------------------------------
 //数の設定処理
 //--------------------------------------------------
-void SetNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber, int nDigit, int nRank)
+void SetRightNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber, int nDigit, int nRank)
 {
 	for (int i = 0; i < MAX_NUMBER; i++)
 	{
@@ -190,6 +190,56 @@ void SetNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber, int nD
 
 		//頂点カラーの設定処理
 		Setcol(pVtx, 0.0f, 0.0f, 0.0f, 1.0f);
+
+		//テクスチャ座標の設定処理
+		Settex(pVtx, 0.0f + fNumberTex, fTex + fNumberTex, 0.0f, 1.0f);
+
+		//頂点バッファをアンロックする
+		s_pVtxBuff->Unlock();
+
+		break;
+	}
+}
+
+//--------------------------------------------------
+//数の設定処理
+//--------------------------------------------------
+void SetMiddleNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber)
+{
+	for (int i = 0; i < MAX_NUMBER; i++)
+	{
+		Number *pNumber = &s_aNumber[i];
+
+		if (pNumber->bUse)
+		{//数が使用されている
+			continue;
+		}
+
+		//数が使用されていない
+
+		pNumber->pos = pos;
+		pNumber->fWidth = fWidth;
+		pNumber->fHeight = fHeight;
+		pNumber->nNumber = nNumber;
+		pNumber->nDigit = -1;
+		pNumber->nRank = -1;
+		pNumber->bUse = true;
+
+		VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+		//頂点情報をロックし、頂点情報へのポインタを取得
+		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+		pVtx += (i * 4);		//該当の位置まで進める
+
+		//頂点座標の設定処理
+		SetMiddlepos(pVtx, pos, fWidth, fHeight);
+
+		float fTex = 1.0f / MAX_TEX;
+		float fNumberTex = fTex * nNumber;
+
+		//頂点カラーの設定処理
+		Setcol(pVtx, 0.25f, 1.0f, 0.5f, 1.0f);
 
 		//テクスチャ座標の設定処理
 		Settex(pVtx, 0.0f + fNumberTex, fTex + fNumberTex, 0.0f, 1.0f);
@@ -305,41 +355,6 @@ void RankNumber(int nRank)
 }
 
 //--------------------------------------------------
-//数の移動処理
-//--------------------------------------------------
-void MoveNumber(D3DXVECTOR3 move, int nNumber, int nDigit, int nRank)
-{
-	for (int i = 0; i < MAX_NUMBER; i++)
-	{
-		Number *pNumber = &s_aNumber[i];
-
-		if (!pNumber->bUse || pNumber->nNumber != nNumber ||
-			pNumber->nDigit != nDigit || pNumber->nRank != nRank)
-		{//数が使用されていない、数字が違う、桁数が違う、順位が違う
-			continue;
-		}
-
-		//数が使用されている、数字が同じ、桁数が同じ、順位が同じ
-
-		//位置を更新
-		pNumber->pos.x += move.x;
-
-		VERTEX_2D *pVtx;		//頂点情報へのポインタ
-
-		//頂点情報をロックし、頂点情報へのポインタを取得
-		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
-
-		pVtx += (i * 4);		//該当の位置まで進める
-
-		//頂点座標の設定処理
-		SetRightpos(pVtx, pNumber->pos, pNumber->fWidth, pNumber->fHeight);
-
-		//頂点バッファをアンロックする
-		s_pVtxBuff->Unlock();
-	}
-}
-
-//--------------------------------------------------
 //数の頂点処理
 //--------------------------------------------------
 void PosNumber(D3DXVECTOR3 pos, int nNumber, int nDigit, int nRank)
@@ -371,5 +386,24 @@ void PosNumber(D3DXVECTOR3 pos, int nNumber, int nDigit, int nRank)
 
 		//頂点バッファをアンロックする
 		s_pVtxBuff->Unlock();
+	}
+}
+
+//--------------------------------------------------
+//数の使用処理
+//--------------------------------------------------
+void UseNumber(int nDigit)
+{
+	for (int i = 0; i < MAX_NUMBER; i++)
+	{
+		Number *pNumber = &s_aNumber[i];
+
+		if (!pNumber->bUse || pNumber->nDigit != nDigit)
+		{//数が使用されていない、桁数が違う
+			continue;
+		}
+
+		//数が使用されている、桁数が同じ
+		pNumber->bUse = false;
 	}
 }
