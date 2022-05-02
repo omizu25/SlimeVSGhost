@@ -40,7 +40,11 @@ SOUNDPARAM g_aParam[SOUND_LABEL_MAX] =
 	{"data/BGM/mysteryman.wav", -1},						// BGM4
 	{"data/BGM/RISE.wav", -1},								// BGM5
 	{"data/BGM/Start_Beets.wav", -1},						// BGM6
-	{"data/SE/gun05.wav", 0},								// 銃音
+	{"data/SE/countdown.wav", 0},							// カウントダウン音
+	{"data/SE/タイトル表示.wav", 0},						// ゴースト死亡音
+	{"data/SE/ヒューンと落下.wav", 0},						// プレイヤーの死亡音
+	{"data/SE/ポカンとげんこつ.wav", 0},					// プレイヤーの当たった音
+	{"data/SE/K.O.wav", 0},									// K.O音
 	{"data/SE/jump.wav", 0},								// ジャンプ音
 	{"data/SE/魔王魂  レトロ18.wav", 0},					// 吸い込み音
 	{"data/SE/magical25.wav", 0},							// スター音

@@ -207,9 +207,6 @@ void InitPause(void)
 //--------------------------------------------------
 void UninitPause(void)
 {
-	//サウンドの停止
-	StopSound();
-
 	if (s_pVtxBuff != NULL)
 	{//頂点バッファの破棄
 		s_pVtxBuff->Release();

@@ -159,7 +159,7 @@ void AddCountdown(int nValue)
 		UseNumber(-1);
 
 		//ƒQ[ƒ€‚Ìİ’èˆ—
-		SetGameState(GAMESTATE_NORMAL);
+		SetGameState(GAMESTATE_NORMAL, 0);
 	}
 }
 

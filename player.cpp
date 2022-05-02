@@ -31,6 +31,7 @@
 #define MAX_GRAVITY			(1.5f)			//重力の最大値
 #define MAX_INERTIA			(0.05f)			//慣性の最大値
 #define MAX_INTERVAL		(7)				//カウンターのインターバル
+#define START_DEATH			(30)			//死亡の動きの始まり
 
 //--------------------------------------------------
 //プロトタイプ宣言
@@ -127,9 +128,6 @@ void InitPlayer(void)
 //--------------------------------------------------
 void UninitPlayer(void)
 {
-	//サウンドの停止
-	StopSound();
-
 	for (int i = 0; i < MAX_TEX; i++)
 	{
 		if (s_pTexture[i] != NULL)
@@ -159,14 +157,17 @@ void UpdatePlayer(void)
 	//状態処理
 	UpdateState(pVtx);
 
-	//移動処理
-	UpdateMove(pVtx);
+	if (s_Player.state != PLAYERSTATE_DEATH)
+	{//生きてる
+		//移動処理
+		UpdateMove(pVtx);
 
-	//モーション処理
-	UpdateMotion();
+		//モーション処理
+		UpdateMotion();
 
-	//頂点座標の設定処理
-	SetBottompos(pVtx, s_Player.pos, s_Player.fWidth, s_Player.fHeight);
+		//頂点座標の設定処理
+		SetBottompos(pVtx, s_Player.pos, s_Player.fWidth, s_Player.fHeight);
+	}
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
@@ -192,6 +193,7 @@ void DrawPlayer(void)
 	switch (s_Player.state)
 	{
 	case PLAYERSTATE_NORMAL:		//通常状態
+	case PLAYERSTATE_DEATH:			//死亡状態
 
 		//ポリゴンとテクスチャのαをまぜる
 		pDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
@@ -261,7 +263,7 @@ Player *GetPlayer(void)
 void HitPlayer(int nDamage)
 {
 	if (s_Player.state == PLAYERSTATE_NORMAL)
-	{
+	{//通常状態のとき
 		s_Player.nLife -= nDamage;
 
 		//ゲージの減算処理
@@ -269,11 +271,25 @@ void HitPlayer(int nDamage)
 
 		if (s_Player.nLife <= 0)
 		{//プレイヤーの体力がなくなった
+			s_Player.state = PLAYERSTATE_DEATH;
+			s_Player.move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+
+			float fHeight = s_Player.fHeight * 0.5f;
+			s_Player.fLength = sqrtf(s_Player.fWidth * s_Player.fWidth + fHeight * fHeight);
+			s_Player.fAngle = atan2f(s_Player.fWidth, fHeight);
+
+			s_Player.nCounterState = 0;
+
+			s_Player.move.y = sinf((s_Player.nCounterState * 0.5f) * (D3DX_PI * 2.0f)) * 5.0f;
+
 			//リザルトの設定処理
 			SetResult(RESULT_LOSE);
 
 			//ゲームの設定処理
-			SetGameState(GAMESTATE_END);
+			SetGameState(GAMESTATE_END, 120);
+
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_KO);
 		}
 		else
 		{//まだ生きてる
@@ -291,6 +307,9 @@ void HitPlayer(int nDamage)
 
 			//頂点バッファをアンロックする
 			s_pVtxBuff->Unlock();
+
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_ポカンとげんこつ);
 		}
 	}
 }
@@ -305,10 +324,10 @@ static void InitStruct(void)
 	s_Player.pos.y = (SCREEN_HEIGHT / MAX_Y_BLOCK) * MIDDLE_BLOCK;
 	s_Player.pos.z = 0.0f;
 
-	s_Player.fWidth = PLAYER_WIDTH * 0.5f;					//幅の初期化
-	s_Player.fHeight = PLAYER_HEIGHT;						//高さの初期化
-	s_Player.nLife = 100;									//寿命の初期化
-	s_Player.bDirection = true;								//右向き
+	s_Player.fWidth = PLAYER_WIDTH * 0.5f;		//幅の初期化
+	s_Player.fHeight = PLAYER_HEIGHT;			//高さの初期化
+	s_Player.nLife = 100;						//寿命の初期化
+	s_Player.bDirection = true;					//右向き
 
 	//他のはmemsetで0にした。
 }
@@ -343,7 +362,7 @@ static void UpdateState(VERTEX_2D *pVtx)
 
 		s_Player.nCounterState++;
 
-		s_Player.fCol = 0.3f + sinf((s_Player.nCounterState * 0.05f) * (D3DX_PI * 2.0f)) * 0.2f ;
+		s_Player.fCol = 0.3f + sinf((s_Player.nCounterState * 0.05f) * (D3DX_PI * 2.0f)) * 0.2f;
 
 		//頂点カラーの設定処理
 		Setcol(pVtx, s_Player.fCol, s_Player.fCol, s_Player.fCol, 1.0f);
@@ -359,6 +378,43 @@ static void UpdateState(VERTEX_2D *pVtx)
 
 		break;
 
+	case PLAYERSTATE_DEATH:			//死亡状態
+
+		s_Player.nCounterState++;
+
+		if (s_Player.nCounterState == START_DEATH)
+		{
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_ヒューンと落下);
+		}
+
+		if (s_Player.nCounterState >= START_DEATH)
+		{
+			s_Player.move.y = -cosf(((s_Player.nCounterState - START_DEATH) * 0.01f) * (D3DX_PI * 2.0f)) * 5.0f;
+
+			if (s_Player.move.y <= 0.0f)
+			{//上に参ります
+				s_Player.move.y -= 3.0f;
+			}
+			else
+			{//下に参ります
+				s_Player.move.y += 15.5f;
+			}
+
+			//位置を更新
+			s_Player.pos.y += s_Player.move.y;
+
+			s_Player.fRot += -0.5f;
+
+			//頂点座標の設定処理
+			SetRotpos(pVtx, s_Player.pos, s_Player.fRot, s_Player.fLength, s_Player.fAngle);
+
+			//パーティクルの設定処理
+			SetParticle(s_Player.pos, EFFECTTYPE_STAR, s_Player.bDirection);
+		}
+
+		break;
+
 	default:
 		assert(false);
 		break;
@@ -370,6 +426,8 @@ static void UpdateState(VERTEX_2D *pVtx)
 //--------------------------------------------------
 static void UpdateMove(VERTEX_2D *pVtx)
 {
+	bool bDown = false;
+
 	//攻撃処理
 	UpdateAttack();
 
@@ -389,7 +447,7 @@ static void UpdateMove(VERTEX_2D *pVtx)
 			case ATTACKSTATE_STORE:			//蓄えている状態
 				s_Player.move.x += sinf(-D3DX_PI * 0.5f) * MIN_MOVE;
 				s_Player.move.y += cosf(-D3DX_PI * 0.5f) * MIN_MOVE;
-				
+
 				break;
 
 			case ATTACKSTATE_IN:			//吸い込んでる状態
@@ -430,7 +488,7 @@ static void UpdateMove(VERTEX_2D *pVtx)
 				assert(false);
 				break;
 			}
-			
+
 			s_Player.bDirection = true;		//右向き
 		}
 
@@ -440,46 +498,46 @@ static void UpdateMove(VERTEX_2D *pVtx)
 		Settex(pVtx, 0.0f + fTex, (1.0f / MAX_U_PATTERN) + fTex, 0.0f, 1.0f);
 
 		//ジャンプ、降りる処理
-		bool bDown = UpdateUpDown();
-
-		//重力
-		s_Player.move.y += MAX_GRAVITY;
-
-		//スティックでの移動量の更新
-		s_Player.move.x += GetJoypadStick(JOYKEY_L_STICK).x;
-
-		//前回の位置の記憶
-		s_Player.posOld = s_Player.pos;
-
-		//位置を更新
-		s_Player.pos.x += s_Player.move.x;
-		s_Player.pos.y += s_Player.move.y;
-
-		//ブロックの当たり判定処理
-		if (CollisionBlock(&s_Player.pos, &s_Player.posOld, &s_Player.move, s_Player.fWidth, s_Player.fHeight))
-		{//ブロックの上端にいる時
-			//バウンド処理
-			UpdateBound();
-		}
-		else
-		{//空中
-			if (s_Player.jump == JUMPSTATE_NONE)
-			{//何もしていない
-				s_Player.jump = JUMPSTATE_JUMP;
-				s_Player.fHeight = PLAYER_HEIGHT;
-				s_Player.nCounterMotion = 0;
-			}
-		}
-
-		if (bDown)
-		{//降りる
-			//ブロックの上端の当たり判定
-			CollisionTopBlock(&s_Player.pos, s_Player.fWidth, s_Player.fHeight);
-		}
-
-		//慣性・移動量を更新 (減衰させる)
-		s_Player.move.x += (0.0f - s_Player.move.x) * MAX_INERTIA;
+		bDown = UpdateUpDown();
 	}
+
+	//重力
+	s_Player.move.y += MAX_GRAVITY;
+
+	//スティックでの移動量の更新
+	s_Player.move.x += GetJoypadStick(JOYKEY_L_STICK).x;
+
+	//前回の位置の記憶
+	s_Player.posOld = s_Player.pos;
+
+	//位置を更新
+	s_Player.pos.x += s_Player.move.x;
+	s_Player.pos.y += s_Player.move.y;
+
+	//ブロックの当たり判定処理
+	if (CollisionBlock(&s_Player.pos, &s_Player.posOld, &s_Player.move, s_Player.fWidth, s_Player.fHeight))
+	{//ブロックの上端にいる時
+		//バウンド処理
+		UpdateBound();
+	}
+	else
+	{//空中
+		if (s_Player.jump == JUMPSTATE_NONE)
+		{//何もしていない
+			s_Player.jump = JUMPSTATE_JUMP;
+			s_Player.fHeight = PLAYER_HEIGHT;
+			s_Player.nCounterMotion = 0;
+		}
+	}
+
+	if (bDown)
+	{//降りる
+		//ブロックの上端の当たり判定
+		CollisionTopBlock(&s_Player.pos, s_Player.fWidth, s_Player.fHeight);
+	}
+
+	//慣性・移動量を更新 (減衰させる)
+	s_Player.move.x += (0.0f - s_Player.move.x) * MAX_INERTIA;
 
 	//画面外処理
 	UpdateOffScreen();
@@ -493,13 +551,10 @@ static void UpdateAttack(void)
 	switch (s_Player.attack)
 	{
 	case ATTACKSTATE_NONE:			//何もしていない状態
-		if (s_Player.jump == JUMPSTATE_NONE)
-		{//何もしてない
-			if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
-			{//ENTERキーが押された
-				s_Player.attack = ATTACKSTATE_IN;
-				s_Player.move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-			}
+		if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
+		{//ENTERキーが押された
+			s_Player.attack = ATTACKSTATE_IN;
+			s_Player.move.x = 0.0f;
 		}
 
 		break;
@@ -511,7 +566,7 @@ static void UpdateAttack(void)
 			InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
 
 			//サウンドの再生
-			PlaySound(SOUND_LABEL_SE_PUNCH);
+			PlaySound(SOUND_LABEL_SE_IN);
 
 			s_Player.nCounterAttack = 0;
 		}

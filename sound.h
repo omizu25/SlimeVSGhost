@@ -21,9 +21,13 @@ typedef enum
 	SOUND_LABEL_MYSTERYMAN,						// BGM4
 	SOUND_LABEL_RISE,							// BGM5
 	SOUND_LABEL_START_BEETS,					// BGM6
-	SOUND_LABEL_SE_GUN05,						// 銃音
+	SOUND_LABEL_SE_COUNTDOWN,					// カウントダウン音
+	SOUND_LABEL_SE_タイトル表示,				// ゴースト死亡音
+	SOUND_LABEL_SE_ヒューンと落下,				// プレイヤー死亡音
+	SOUND_LABEL_SE_ポカンとげんこつ,			// プレイヤーの当たった音
+	SOUND_LABEL_SE_KO,							// K.O音
 	SOUND_LABEL_SE_JUMP,						// ジャンプ音
-	SOUND_LABEL_SE_PUNCH,						// 吸い込み音
+	SOUND_LABEL_SE_IN,							// 吸い込み音
 	SOUND_LABEL_SE_MAGICAL29,					// スター音
 	SOUND_LABEL_SE_ONE_POINT29,					// ワンポイント音
 	SOUND_LABEL_SE_SYSTEM20,					// キャンセル音

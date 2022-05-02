@@ -76,7 +76,7 @@ void AddTime(int nValue)
 		SetResult(RESULT_LOSE);
 
 		//ƒQ[ƒ€‚Ìİ’èˆ—
-		SetGameState(GAMESTATE_END);
+		SetGameState(GAMESTATE_END, 45);
 	}
 
 	int nTime = s_nTime;

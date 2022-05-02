@@ -35,6 +35,7 @@
 #define NEW_HEIGHT					(80.0f)			//新しい奴の高さ
 #define WIDTH_INTERVAL				(40.0f)			//幅の間隔
 #define HEIGHT_INTERVAL				(20.0f)			//高さの間隔
+#define SPECIFIED_POS_X				(900.0f)		//既定の位置
 
 //--------------------------------------------------
 //プロトタイプ宣言
@@ -654,9 +655,9 @@ static void UpdateMove(void)
 		//位置の更新
 		s_fWidth[i] += s_move[i].x;
 
-		if (s_fWidth[i] <= 900.0f)
+		if (s_fWidth[i] < SPECIFIED_POS_X)
 		{//既定の値を越した
-			s_fWidth[i] = 900.0f;
+			s_fWidth[i] = SPECIFIED_POS_X;
 			s_move[i].x = 0.0f;
 		}
 	}
@@ -671,18 +672,21 @@ static bool UpdateWherePos(void)
 
 	for (int i = 0; i < MAX_RANKING; i++)
 	{//５位まで
-		if (s_fWidth[i] > 900.0f)
+		if (s_fWidth[i] > SPECIFIED_POS_X)
 		{//既定の値を越してない
 			bWherePos = false;
 		}
-
-		s_move[i].x = -(s_fWidth[i] - 900.0f);
 	}
 
 	if (!bWherePos)
 	{
+		for (int i = 0; i < MAX_RANKING; i++)
+		{//５位まで
+			s_move[i].x = -(s_fWidth[i] - (SPECIFIED_POS_X - 0.1f));
+		}
+
 		//位置を更新
-		s_pos.x = 900.0f;
+		s_pos.x = SPECIFIED_POS_X;
 	}
 
 	return bWherePos;

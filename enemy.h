@@ -32,6 +32,7 @@ typedef enum
 {
 	ENEMYSTATE_NORMAL = 0,		//通常状態
 	ENEMYSTATE_DAMAGE,			//ダメージ状態
+	ENEMYSTATE_DEATH,			//死亡状態
 	ENEMYSTATE_MAX
 }ENEMYSTATE;
 
@@ -54,6 +55,7 @@ typedef struct
 	D3DXVECTOR3		pos;				//位置
 	D3DXVECTOR3		posOld;				//前回の位置
 	D3DXVECTOR3		move;				//移動量
+	D3DXCOLOR		col;				//色
 	ENEMYTYPE		type;				//種類
 	ENEMYSTATE		state;				//状態
 	ENEMYPOP		pop;				//ポップ場所

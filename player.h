@@ -40,6 +40,7 @@ typedef enum
 	PLAYERSTATE_NORMAL = 0,		//通常状態
 	PLAYERSTATE_DAMAGE,			//ダメージ状態
 	PLAYERSTATE_STAR,			//無敵状態
+	PLAYERSTATE_DEATH,			//死亡状態
 	PLAYERSTATE_MAX
 }PLAYERSTATE;
 
@@ -56,6 +57,9 @@ typedef struct
 	PLAYERSTATE		state;				//状態
 	float			fWidth;				//幅
 	float			fHeight;			//高さ
+	float			fRot;				//回転
+	float			fLength;			//対角線の長さ
+	float			fAngle;				//対角線の角度
 	float			fCol;				//カラー
 	int				nCounterState;		//状態管理カウンター
 	int				nCounterMotion;		//モーションカウンター

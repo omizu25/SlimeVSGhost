@@ -13,6 +13,7 @@
 #include "ranking.h"
 #include "result.h"
 #include "setup.h"
+#include "sound.h"
 #include "time.h"
 
 #include <assert.h>
@@ -25,6 +26,7 @@
 #define MAX_V_PATTERN		(2)			//Vパターンの最大数
 #define TEX_INTERVAL		(7)			//カウンターのインターバル
 #define STOP_TIME			(60)		//止まる時間
+#define ALPHA_CHANGE		(0.02f)		//α値の変化量
 
 //--------------------------------------------------
 //プロトタイプ宣言
@@ -136,23 +138,26 @@ void UpdateEnemy(void)
 
 		//敵が使用されている
 
-		//前回の位置の記憶
-		pEnemy->posOld = pEnemy->pos;
+		if (pEnemy->state != ENEMYSTATE_DEATH)
+		{//生きてる
+			//前回の位置の記憶
+			pEnemy->posOld = pEnemy->pos;
 
-		//位置の更新
-		pEnemy->pos += pEnemy->move;
+			//位置の更新
+			pEnemy->pos += pEnemy->move;
 
-		//ストップ処理
-		UpdateStop(pEnemy);
+			//ストップ処理
+			UpdateStop(pEnemy);
 
-		//アイテムの当たり判定処理
-		CollisionItem(&pEnemy->pos, &pEnemy->posOld, pEnemy->fWidth, pEnemy->fHeight);
+			//アイテムの当たり判定処理
+			CollisionItem(&pEnemy->pos, &pEnemy->posOld, pEnemy->fWidth, pEnemy->fHeight);
 
-		//画面外処理
-		UpdateOffScreen(pEnemy);
+			//画面外処理
+			UpdateOffScreen(pEnemy);
 
-		//当たり判定処理
-		UpdateCollision(pEnemy);
+			//当たり判定処理
+			UpdateCollision(pEnemy);
+		}
 
 		VERTEX_2D *pVtx;		//頂点情報へのポインタ
 
@@ -224,6 +229,7 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 		pEnemy->pos = pos;
 		pEnemy->type = type;
 		pEnemy->posOld = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+		pEnemy->col = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 		pEnemy->state = ENEMYSTATE_NORMAL;
 		pEnemy->fWidth = ENEMY_WIDTH * 0.5f;
 		pEnemy->fHeight = ENEMY_HEIGHT;
@@ -330,32 +336,13 @@ void HitEnemy(int nCntEnemy, int nDamage)
 
 		if (pEnemy->nLife <= 0)
 		{//敵の体力がなくなった
-			pEnemy->bUse = false;		//使用していない状態にする
+			pEnemy->state = ENEMYSTATE_DEATH;
 
-			int nUse = 0;
+			//pEnemy->move.x *= 0.5f;
+			pEnemy->move = D3DXVECTOR3(0.0f, -2.5f, 0.0f);
 
-			for (int i = 0; i < ENEMYTYPE_MAX; i++)
-			{
-				if (s_aEnemy[i].bUse)
-				{//敵が使用されている
-					continue;
-				}
-
-				//敵が使用されていない
-				nUse++;
-			}
-
-			if (nUse >= ENEMYTYPE_MAX)
-			{//全員使用されていない
-				//リザルトの設定処理
-				SetResult(RESULT_WIN);
-
-				//ゲームの設定処理
-				SetGameState(GAMESTATE_END);
-
-				//ランキングの設定処理
-				SetRanking(GetTime());
-			}
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_タイトル表示);
 		}
 		else
 		{//まだ生きてる
@@ -387,6 +374,7 @@ static void UpdateStop(Enemy *pEnemy)
 	if (pEnemy->nCounterStop <= STOP_TIME)
 	{//まだ止まってない
 		float fEnemyWidth = ENEMY_WIDTH * 0.5f;
+
 		if (pEnemy->bDirection)
 		{//右向き
 			if (pEnemy->pos.x >= fEnemyWidth)
@@ -470,7 +458,8 @@ static void UpdateCollision(Enemy *pEnemy)
 	if (pEnemy->pos.y <= (pPlayer->pos.y + pEnemy->fHeight) &&
 		pEnemy->pos.y >= (pPlayer->pos.y - pPlayer->fHeight) &&
 		pEnemy->pos.x <= (pPlayer->pos.x + pPlayer->fWidth + pEnemy->fWidth) &&
-		pEnemy->pos.x >= (pPlayer->pos.x - pPlayer->fWidth - pEnemy->fWidth))
+		pEnemy->pos.x >= (pPlayer->pos.x - pPlayer->fWidth - pEnemy->fWidth) &&
+		pEnemy->state != ENEMYSTATE_DEATH)
 	{//プレイヤーに敵が当たった時
 
 		//プレイヤーのヒット処理
@@ -502,6 +491,48 @@ static void UpdateState(VERTEX_2D *pVtx, Enemy *pEnemy)
 
 			pEnemy->nCounterState = 0;
 		}
+
+		break;
+
+	case ENEMYSTATE_DEATH:		//死亡状態
+
+		pEnemy->col.a -= ALPHA_CHANGE;
+
+		//位置の更新
+		pEnemy->pos += pEnemy->move;
+
+		if (pEnemy->col.a <= 0.0f)
+		{
+			pEnemy->bUse = false;		//使用していない状態にする
+
+			int nUse = 0;
+
+			for (int i = 0; i < ENEMYTYPE_MAX; i++)
+			{
+				if (s_aEnemy[i].bUse)
+				{//敵が使用されている
+					continue;
+				}
+
+				//敵が使用されていない
+				nUse++;
+			}
+
+			if (nUse >= ENEMYTYPE_MAX)
+			{//全員使用されていない
+			 //リザルトの設定処理
+				SetResult(RESULT_WIN);
+
+				//ゲームの設定処理
+				SetGameState(GAMESTATE_END, 60);
+
+				//ランキングの設定処理
+				SetRanking(GetTime());
+			}
+		}
+
+		//頂点カラーの設定処理
+		Setcol(pVtx, pEnemy->col.r, pEnemy->col.g, pEnemy->col.b, pEnemy->col.a);
 
 		break;
 

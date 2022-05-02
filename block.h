@@ -54,8 +54,6 @@ void UpdateBlock(void);
 void DrawBlock(void);
 void SetBlock(D3DXVECTOR3 pos, float fWidth, float fHeight);
 Block *GetBlock(void);
-bool GetTexUseBlock(void);
-bool GetCollisionUse(void);
 bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove, float fWidth, float fHeight);
 void CollisionTopBlock(D3DXVECTOR3 *pPos, float fWidth, float fHeight);
 

@@ -15,7 +15,7 @@
 #define MAX_EFFECT			(4096)		//エフェクトの最大数
 #define MAX_TEX				(3)			//テクスチャの最大数
 #define MAX_IN				(2)			//吸い込みの最大数
-#define MAX_STAR			(7)			//スターの最大数
+#define MAX_STAR			(5)			//スターの最大数
 #define MAX_EXPLOSION		(50)		//爆発の最大数
 
 //--------------------------------------------------
@@ -353,7 +353,7 @@ void SetParticle(D3DXVECTOR3 pos, EFFECTTYPE type, bool bDirection)
 
 		for (int i = 0; i < MAX_STAR; i++)
 		{
-			Pos.x = (float)(rand() % 501) / 100.0f + pos.x;
+			Pos.x = (float)((rand() % 1601) - 800) / 30.0f + pos.x;
 			Pos.y = (float)((rand() % 1601) - 800) / 30.0f + pos.y;
 			Pos.z = 0.0f;
 

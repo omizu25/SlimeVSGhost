@@ -28,7 +28,7 @@ void InitGame(void);
 void UninitGame(void);
 void UpdateGame(void);
 void DrawGame(void);
-void SetGameState(GAMESTATE state);
+void SetGameState(GAMESTATE state, int nCounterState);
 void SetEnablePause(bool bPause);
 
 #endif // !_GAME_H_

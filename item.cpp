@@ -98,9 +98,6 @@ void InitItem(void)
 //--------------------------------------------------
 void UninitItem(void)
 {
-	//サウンドの停止
-	StopSound();
-
 	for (int i = 0; i < ITEMTYPE_MAX; i++)
 	{
 		if (s_pTexture[i] != NULL)
@@ -213,7 +210,7 @@ void UpdateItem(void)
 //--------------------------------------------------
 //アイテムの描画処理
 //--------------------------------------------------
-void DrawItem(void)
+void DrawItem(ITEMTYPE type)
 {
 	//デバイスへのポインタの取得
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
@@ -226,11 +223,10 @@ void DrawItem(void)
 
 	for (int i = 0; i < MAX_ITEM; i++)
 	{
-		if (s_aItem[i].bUse)
-		{//アイテムが使用されている
-
+		if (s_aItem[i].bUse && s_aItem[i].type == type)
+		{//アイテムが使用されている、種類が同じ
 			//テクスチャの設定
-			pDevice->SetTexture(0, s_pTexture[s_aItem[i].type]);
+			pDevice->SetTexture(0, s_pTexture[type]);
 
 			//ポリゴンの描画
 			pDevice->DrawPrimitive(
@@ -446,6 +442,9 @@ static void UpdateCollision(Item *pItem)
 		HitPlayer(20);
 
 		pItem->bUse = false;		//使用していない状態にする
+
+		//サウンドの再生
+		PlaySound(SOUND_LABEL_SE_ポカンとげんこつ);
 	}
 
 	Enemy *pEnemy = GetEnemy();		//敵の取得
@@ -506,6 +505,12 @@ static void UpdateCollision(Item *pItem)
 		{//ブロックにスターが当たった時
 			s_aItem[i].bUse = false;		//使用していない状態にする
 			pItem->bUse = false;		//使用していない状態にする
+
+			//パーティクルの設定処理
+			SetParticle(pItem->pos, EFFECTTYPE_EXPLOSION, pItem->bDirection);
+
+			//サウンドの再生
+			PlaySound(SOUND_LABEL_SE_MAGICAL29);
 		}
 	}
 }

@@ -25,11 +25,6 @@
 #include <assert.h>
 
 //--------------------------------------------------
-//マクロ定義
-//--------------------------------------------------
-#define MAX_END_COUNTER		(60)		//終了状態のカウンターの最大数
-
-//--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
 static GAMESTATE		s_gameState = GAMESTATE_NONE;		//ゲームの状態
@@ -85,9 +80,6 @@ void InitGame(void)
 	//プレイヤーの初期化処理
 	InitPlayer();
 
-	//サウンドの再生
-	PlaySound(SOUND_LABEL_MWTPG);
-
 	s_gameState = GAMESTATE_START;		//開始状態に設定
 
 	s_nCounterState = 0;				//カウンターの初期化
@@ -96,6 +88,12 @@ void InitGame(void)
 
 	//リザルトの設定処理
 	SetResult(RESULT_NONE);
+
+	//サウンドの再生
+	PlaySound(SOUND_LABEL_MWTPG);
+
+	//サウンドの再生
+	PlaySound(SOUND_LABEL_SE_COUNTDOWN);
 }
 
 //--------------------------------------------------
@@ -173,6 +171,7 @@ void UpdateGame(void)
 			break;
 
 		case GAMESTATE_START:		//開始状態
+
 			//カウントダウンの加算処理
 			AddCountdown(1);
 
@@ -221,15 +220,18 @@ void UpdateGame(void)
 
 		case GAMESTATE_END:			//終了状態
 
+			//プレイヤーの更新処理
+			UpdatePlayer();
+
 			//ゲージの更新処理
 			UpdateGauge();
 
 			//エフェクトの更新処理
 			UpdateEffect();
 
-			s_nCounterState++;
+			s_nCounterState--;
 
-			if (s_nCounterState >= MAX_END_COUNTER)
+			if (s_nCounterState <= 0)
 			{
 				s_gameState = GAMESTATE_NONE;		//何もしていない状態に設定
 
@@ -262,17 +264,23 @@ void DrawGame(void)
 	//ブロックの描画処理
 	DrawBlock();
 
+	//アイテムの描画処理
+	DrawItem(ITEMTYPE_BLOCK);
+
 	//エフェクト描画処理
 	DrawEffect(EFFECTTYPE_STAR);
 
 	//アイテムの描画処理
-	DrawItem();
+	DrawItem(ITEMTYPE_STAR);
 
 	//敵の描画処理
 	DrawEnemy();
 
 	//エフェクト描画処理
 	DrawEffect(EFFECTTYPE_MOVE);
+
+	//ゲージの描画処理
+	DrawGauge();
 
 	//プレイヤーの描画処理
 	DrawPlayer();
@@ -282,9 +290,6 @@ void DrawGame(void)
 
 	//エフェクト描画処理
 	DrawEffect(EFFECTTYPE_EXPLOSION);
-
-	//ゲージの描画処理
-	DrawGauge();
 
 	//数の描画処理
 	DrawNumber();
@@ -297,23 +302,19 @@ void DrawGame(void)
 
 	if (s_bPause)
 	{//ポーズ中
-//#ifdef DEBUG
-
 		//ポーズの描画処理
 		DrawPause();
-
-//#endif // DEBUG
 	}
 }
 
 //--------------------------------------------------
 //ゲームの設定処理
 //--------------------------------------------------
-void SetGameState(GAMESTATE state)
+void SetGameState(GAMESTATE state, int nCounterState)
 {
 	s_gameState = state;
 
-	s_nCounterState = 0;
+	s_nCounterState = nCounterState;
 }
 
 //--------------------------------------------------

@@ -48,7 +48,7 @@ typedef struct
 void InitItem(void);
 void UninitItem(void);
 void UpdateItem(void);
-void DrawItem(void);
+void DrawItem(ITEMTYPE type);
 void SetItem(D3DXVECTOR3 pos, ITEMTYPE type, bool bDirection);
 Item *GetItem(void);
 bool GetDeath(void);
