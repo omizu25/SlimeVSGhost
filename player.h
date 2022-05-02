@@ -44,6 +44,7 @@ typedef enum
 {
 	PLAYERSTATE_NORMAL = 0,		//通常状態
 	PLAYERSTATE_DAMAGE,			//ダメージ状態
+	PLAYERSTATE_STAR,			//無敵状態
 	PLAYERSTATE_MAX
 }PLAYERSTATE;
 
@@ -60,7 +61,9 @@ typedef struct
 	PLAYERSTATE		state;				//状態
 	float			fWidth;				//幅
 	float			fHeight;			//高さ
+	float			fCol;				//カラー
 	int				nCounterState;		//状態管理カウンター
+	int				nCounterJump;		//ジャンプカウンター
 	int				nCounterAttack;		//攻撃カウンター
 	int				nLife;				//寿命
 	bool			bDirection;			//向き [false  : 左向き true  : 右向き]
@@ -73,8 +76,8 @@ void InitPlayer(void);
 void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
-void HitPlayer(int nDamage);
 Player *GetPlayer(void);
+void HitPlayer(int nDamage);
 bool GetTexUsePlayer(void);
 
 #endif // !_PLAYER_H_

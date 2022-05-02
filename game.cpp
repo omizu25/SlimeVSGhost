@@ -102,6 +102,10 @@ void UpdateGame(void)
 	{//ポーズしてない
 		switch (s_gameState)
 		{
+		case GAMESTATE_NONE:		//何もしていない状態
+
+			break;
+
 		case GAMESTATE_NORMAL:		//通常状態
 
 			//背景の更新処理

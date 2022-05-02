@@ -6,6 +6,7 @@
 //--------------------------------------------------
 #include "block.h"
 #include "enemy.h"
+#include "game.h"
 #include "item.h"
 #include "player.h"
 #include "setup.h"
@@ -26,8 +27,10 @@
 //--------------------------------------------------
 static void InitStruct(Enemy *pEnemy);
 static void UpdateStop(Enemy *pEnemy);
+static void UpdateCollision(Enemy *pEnemy);
 static void UpdateOffScreen(Enemy *pEnemy);
 static void UpdatePop(Enemy *pEnemy);
+static void UpdateState(VERTEX_2D *pVtx, Enemy *pEnemy);
 static void UpdateTexAnim(VERTEX_2D *pVtx, Enemy *pEnemy);
 static void PopItem(Enemy *pEnemy);
 
@@ -149,12 +152,18 @@ void UpdateEnemy(void)
 		//画面外処理
 		UpdateOffScreen(pEnemy);
 
+		//当たり判定処理
+		UpdateCollision(pEnemy);
+
 		VERTEX_2D *pVtx;		//頂点情報へのポインタ
 
 		//頂点情報をロックし、頂点情報へのポインタを取得
 		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
 		pVtx += (i * 4);		//該当の位置まで進める
+
+		//状態処理
+		UpdateState(pVtx, pEnemy);
 
 		//頂点座標の設定処理
 		SetBottompos(pVtx, pEnemy->pos, pEnemy->fWidth, pEnemy->fHeight);
@@ -287,15 +296,30 @@ void HitEnemy(int nCntEnemy, int nDamage)
 {
 	Enemy *pEnemy = &s_aEnemy[nCntEnemy];
 
+	pEnemy->nLife -= nDamage;
+
 	if (pEnemy->nLife <= 0)
 	{//敵の体力がなくなった
 		pEnemy->bUse = false;		//使用していない状態にする
+
+		for (int i = 0; i < ENEMYTYPE_MAX; i++)
+		{
+			if (s_aEnemy[i].bUse)
+			{//敵が１体以上使用されている
+				break;
+			}
+
+			//敵が１体も使用されていない
+
+			//ゲームの設定処理
+			SetGameState(GAMESTATE_END);
+		}
 	}
 	else
 	{//まだ生きてる
 		pEnemy->state = ENEMYSTATE_DAMAGE;
 
-		pEnemy->nCounterState = 5;
+		pEnemy->nCounterState = 0;
 
 		VERTEX_2D *pVtx;		//頂点情報へのポインタ
 
@@ -424,6 +448,58 @@ static void UpdatePop(Enemy *pEnemy)
 
 	//アイテムのポップ処理
 	PopItem(pEnemy);
+}
+
+//--------------------------------------------------
+//当たり判定処理
+//--------------------------------------------------
+static void UpdateCollision(Enemy *pEnemy)
+{
+	Player *pPlayer = GetPlayer();		//プレイヤーの取得
+
+	if (pEnemy->pos.y <= (pPlayer->pos.y + pEnemy->fHeight) &&
+		pEnemy->pos.y >= (pPlayer->pos.y - pPlayer->fHeight) &&
+		pEnemy->pos.x <= (pPlayer->pos.x + pPlayer->fWidth + pEnemy->fWidth) &&
+		pEnemy->pos.x >= (pPlayer->pos.x - pPlayer->fWidth - pEnemy->fWidth) &&
+		pPlayer->state == PLAYERSTATE_NORMAL)
+	{//プレイヤーに敵が当たった時
+
+	 //プレイヤーのヒット処理
+		HitPlayer(10);
+	}
+}
+
+//--------------------------------------------------
+//状態処理
+//--------------------------------------------------
+static void UpdateState(VERTEX_2D *pVtx, Enemy *pEnemy)
+{
+	switch (pEnemy->state)
+	{
+	case ENEMYSTATE_NORMAL:		//通常状態
+
+		break;
+
+	case ENEMYSTATE_DAMAGE:		//ダメージ状態
+
+		pEnemy->nCounterState++;
+
+		if (pEnemy->nCounterState >= 15)
+		{
+			//頂点カラーの初期化処理
+			Initcol(pVtx);
+
+			pEnemy->state = ENEMYSTATE_NORMAL;
+
+			pEnemy->nCounterState = 0;
+		}
+
+		break;
+
+	default:
+		assert(false);
+		break;
+	}
 }
 
 //--------------------------------------------------

@@ -5,6 +5,7 @@
 //
 //--------------------------------------------------
 #include "block.h"
+#include "game.h"
 #include "input.h"
 #include "item.h"
 #include "player.h"
@@ -25,11 +26,13 @@
 #define MAX_GRAVITY			(1.5f)			//重力の最大値
 #define MAX_INERTIA			(0.05f)			//慣性の最大値
 #define MAX_INTERVAL		(7)				//カウンターのインターバル
+#define MAX_EFFECT			(256)			//エフェクトの最大数
 
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
 static void InitStruct(void);
+static void UpdateState(VERTEX_2D *pVtx);
 static void UpdateMove(VERTEX_2D *pVtx);
 static void UpdateAttack(void);
 static bool UpdateUpDown(void);
@@ -40,10 +43,10 @@ static void UpdateMotion(void);
 //--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
-static LPDIRECT3DTEXTURE9			s_pTexture = NULL;		//テクスチャへのポインタ
-static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;		//頂点バッファのポインタ
-static Player						s_Player;				//プレイヤーの情報
-static bool							s_bTexUse;				//テクスチャの使用するかどうか
+static LPDIRECT3DTEXTURE9			s_pTexture = NULL;			//テクスチャへのポインタ
+static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;			//頂点バッファのポインタ
+static Player						s_Player;					//プレイヤーの情報
+static bool							s_bTexUse;					//テクスチャの使用するかどうか
 
 //--------------------------------------------------
 //プレイヤーの初期化処理
@@ -124,26 +127,8 @@ void UpdatePlayer(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
-	switch (s_Player.state)
-	{
-	case PLAYERSTATE_NORMAL:		//通常状態
-
-		break;
-
-	case PLAYERSTATE_DAMAGE:		//ダメージ状態
-
-		s_Player.nCounterState--;
-
-		if (s_Player.nCounterState <= 0)
-		{
-			//頂点カラーの設定処理
-			Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
-		}
-		
-		break;
-	default:
-		break;
-	}
+	//状態処理
+	UpdateState(pVtx);
 
 	//移動処理
 	UpdateMove(pVtx);
@@ -181,6 +166,29 @@ void DrawPlayer(void)
 	//頂点フォーマットの設定
 	pDevice->SetFVF(FVF_VERTEX_2D);
 
+	switch (s_Player.state)
+	{
+	case PLAYERSTATE_NORMAL:		//通常状態
+
+		//ポリゴンとテクスチャのαをまぜる
+		pDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
+
+		break;
+
+	case PLAYERSTATE_DAMAGE:		//ダメージ状態
+	case PLAYERSTATE_STAR:			//無敵状態
+
+		//ポリゴンとテクスチャのαを足す
+		pDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_ADD);
+
+		break;
+
+	default:
+		assert(false);
+		break;
+	}
+	
+
 	//テクスチャの設定
 	if (s_bTexUse)
 	{//使用する
@@ -196,39 +204,9 @@ void DrawPlayer(void)
 		D3DPT_TRIANGLESTRIP,		//プリミティブの種類
 		0,							//描画する最初の頂点インデックス
 		2);							//プリミティブ(ポリゴン)数
-}
 
-//-------------------------
-//プレイヤーのヒット処理
-//-------------------------
-void HitPlayer(int nDamage)
-{
-	if (s_Player.state == PLAYERSTATE_NORMAL)
-	{//表示されている
-		s_Player.nLife -= nDamage;
-
-		if (s_Player.nLife <= 0)
-		{//プレイヤーの体力がなくなった
-
-		}
-		else
-		{//まだ生きてる
-			s_Player.state = PLAYERSTATE_DAMAGE;
-
-			s_Player.nCounterState = 5;
-
-			VERTEX_2D *pVtx;		//頂点情報へのポインタ
-
-			//頂点情報をロックし、頂点情報へのポインタを取得
-			s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
-
-			//頂点カラーの設定処理
-			Setcol(pVtx, 1.0f, 0.0f, 0.0f, 1.0f);
-
-			//頂点バッファをアンロックする
-			s_pVtxBuff->Unlock();
-		}
-	}
+	//ポリゴンとテクスチャのαをまぜる
+	pDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
 }
 
 //--------------------------------------------------
@@ -237,6 +215,40 @@ void HitPlayer(int nDamage)
 Player *GetPlayer(void)
 {
 	return &s_Player;
+}
+
+//-------------------------
+//プレイヤーのヒット処理
+//-------------------------
+void HitPlayer(int nDamage)
+{
+	if (s_Player.state == PLAYERSTATE_NORMAL)
+	{
+		s_Player.nLife -= nDamage;
+
+		if (s_Player.nLife <= 0)
+		{//プレイヤーの体力がなくなった
+			//ゲームの設定処理
+			SetGameState(GAMESTATE_END);
+		}
+		else
+		{//まだ生きてる
+			s_Player.state = PLAYERSTATE_DAMAGE;
+
+			s_Player.nCounterState = 0;
+
+			VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+			//頂点情報をロックし、頂点情報へのポインタを取得
+			s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+			//頂点カラーの設定処理
+			Setcol(pVtx, 1.0f, 0.25f, 0.0f, 1.0f);
+
+			//頂点バッファをアンロックする
+			s_pVtxBuff->Unlock();
+		}
+	}
 }
 
 //--------------------------------------------------
@@ -264,9 +276,64 @@ static void InitStruct(void)
 	s_Player.state = PLAYERSTATE_NORMAL;					//通常状態にする
 	s_Player.fWidth = PLAYER_WIDTH * 0.5f;					//幅の初期化
 	s_Player.fHeight = PLAYER_HEIGHT;						//高さの初期化
+	s_Player.fCol = 0.0f;									//カラーの初期化
 	s_Player.nCounterState = 0;								//カウンターの初期化
+	s_Player.nCounterJump = 0;								//カウンターの初期化
 	s_Player.nCounterAttack = 0;							//カウンターの初期化
+	s_Player.nLife = 100;									//寿命の初期化
 	s_Player.bDirection = true;								//右向き
+}
+
+//--------------------------------------------------
+//状態処理
+//--------------------------------------------------
+static void UpdateState(VERTEX_2D *pVtx)
+{
+	switch (s_Player.state)
+	{
+	case PLAYERSTATE_NORMAL:		//通常状態
+
+		break;
+
+	case PLAYERSTATE_DAMAGE:		//ダメージ状態
+
+		s_Player.nCounterState++;
+
+		if (s_Player.nCounterState >= 15)
+		{
+			//頂点カラーの初期化処理
+			Initcol(pVtx);
+
+			s_Player.state = PLAYERSTATE_STAR;
+			s_Player.nCounterState = 0;
+		}
+
+		break;
+
+	case PLAYERSTATE_STAR:			//無敵状態
+
+		s_Player.nCounterState++;
+
+		s_Player.fCol = 0.3f + sinf((s_Player.nCounterState * 0.05f) * (D3DX_PI * 2.0f)) * 0.2f ;
+
+		//頂点カラーの設定処理
+		Setcol(pVtx, s_Player.fCol, s_Player.fCol, s_Player.fCol, 1.0f);
+
+		if (s_Player.nCounterState >= 100)
+		{
+			//頂点カラーの初期化処理
+			Initcol(pVtx);
+
+			s_Player.state = PLAYERSTATE_NORMAL;
+			s_Player.nCounterState = 0;
+		}
+
+		break;
+
+	default:
+		assert(false);
+		break;
+	}
 }
 
 //--------------------------------------------------
@@ -367,7 +434,7 @@ static void UpdateMove(VERTEX_2D *pVtx)
 			{//何もしていない
 				s_Player.jump = JUMPSTATE_JUMP;
 				s_Player.fHeight = PLAYER_HEIGHT;
-				s_Player.nCounterState = 0;
+				s_Player.nCounterJump = 0;
 			}
 		}
 
@@ -463,7 +530,7 @@ static bool UpdateUpDown(void)
 			s_Player.move.y += MAX_JUMP;
 			s_Player.jump = JUMPSTATE_JUMP;
 			s_Player.fHeight = PLAYER_HEIGHT;
-			s_Player.nCounterState = 0;
+			s_Player.nCounterJump = 0;
 		}
 	}
 
@@ -523,7 +590,7 @@ static void UpdateBound(void)
 		{//バウンドが終わった
 			s_Player.jump = JUMPSTATE_NONE;
 			s_Player.move.y = 0.0f;
-			s_Player.nCounterState = 0;
+			s_Player.nCounterJump = 0;
 		}
 
 		break;
@@ -553,8 +620,8 @@ static void UpdateMotion(void)
 		switch (s_Player.jump)
 		{
 		case JUMPSTATE_NONE:		//何もしていない
-			s_Player.nCounterState++;
-			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterState * 0.01f) * (D3DX_PI * 2.0f)) * 5.0f);
+			s_Player.nCounterJump++;
+			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterJump * 0.01f) * (D3DX_PI * 2.0f)) * 5.0f);
 			break;
 
 		case JUMPSTATE_JUMP:		//ジャンプ
@@ -586,10 +653,10 @@ static void UpdateMotion(void)
 
 			if (s_Player.pos.y <= fPosY && s_Player.pos.y >= (fPosY - (SCREEN_HEIGHT / MAX_Y_BLOCK)))
 			{//下のブロックから１ブロック上の範囲なら
-				s_Player.nCounterState++;
+				s_Player.nCounterJump++;
 			}
 
-			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterState * 0.01f) * (D3DX_PI * 2.0f)) * 3.0f * -s_Player.move.y);
+			s_Player.fHeight = PLAYER_HEIGHT + (sinf((s_Player.nCounterJump * 0.01f) * (D3DX_PI * 2.0f)) * 3.0f * -s_Player.move.y);
 
 			break;
 

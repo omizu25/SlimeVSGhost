@@ -1,26 +1,33 @@
 //--------------------------------------------------
 //
-// ACG制作 ( bg.cpp )
+// STG制作 ( result.cpp )
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
-#include "bg.h"
+#include "fade.h"
 #include "input.h"
-#include "player.h"
+#include "result.h"
 #include "setup.h"
 
-//--------------------------------------------------
+//-------------------------
 //スタティック変数
-//--------------------------------------------------
+//-------------------------
+static LPDIRECT3DTEXTURE9			s_pTexture = NULL;		//テクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;		//頂点バッファのポインタ
 
-//--------------------------------------------------
-//背景の初期化処理
-//--------------------------------------------------
-void InitBG(void)
+//-------------------------
+//リザルトの初期化処理
+//-------------------------
+void InitResult(void)
 {
 	//デバイスへのポインタの取得
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\result000.png",
+		&s_pTexture);
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -46,21 +53,27 @@ void InitBG(void)
 	//rhwの初期化処理
 	Initrhw(pVtx);
 
-	//頂点カラーの設定処理
-	Setcol(pVtx, 1.0f, 1.0f, 0.5f, 1.0f);
+	//頂点カラーの初期化処理
+	Initcol(pVtx);
 
-	//テクスチャの初期化処理
+	//テクスチャ座標の初期化処理
 	Inittex(pVtx);
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
 }
 
-//--------------------------------------------------
-//背景の終了処理
-//--------------------------------------------------
-void UninitBG(void)
+//-------------------------
+//リザルトの終了処理
+//-------------------------
+void UninitResult(void)
 {
+	if (s_pTexture != NULL)
+	{//テクスチャの破棄
+		s_pTexture->Release();
+		s_pTexture = NULL;
+	}
+
 	if (s_pVtxBuff != NULL)
 	{//頂点バッファの破棄
 		s_pVtxBuff->Release();
@@ -68,21 +81,27 @@ void UninitBG(void)
 	}
 }
 
-//--------------------------------------------------
-//背景の更新処理
-//--------------------------------------------------
-void UpdateBG(void)
+//-------------------------
+//リザルトの更新処理
+//-------------------------
+void UpdateResult(void)
 {
-	
+	if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
+	{//決定キー(ENTERキー)が押されたかどうか
+		//フェード設定
+		SetFade(MODE_TITLE);
+	}
 }
 
-//--------------------------------------------------
-//背景の描画処理
-//--------------------------------------------------
-void DrawBG(void)
+//-------------------------
+//リザルトの描画処理
+//-------------------------
+void DrawResult(void)
 {
-	//デバイスへのポインタの取得
-	LPDIRECT3DDEVICE9 pDevice = GetDevice();
+	LPDIRECT3DDEVICE9 pDevice;		//デバイスへのポインタ
+
+	//デバイスの取得
+	pDevice = GetDevice();
 
 	//頂点バッファをデータストリームに設定
 	pDevice->SetStreamSource(0, s_pVtxBuff, 0, sizeof(VERTEX_2D));
@@ -91,8 +110,8 @@ void DrawBG(void)
 	pDevice->SetFVF(FVF_VERTEX_2D);
 
 	//テクスチャの設定
-	pDevice->SetTexture(0, NULL);
-
+	pDevice->SetTexture(0, s_pTexture);
+	
 	//ポリゴンの描画
 	pDevice->DrawPrimitive(
 		D3DPT_TRIANGLESTRIP,		//プリミティブの種類

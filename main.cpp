@@ -9,6 +9,8 @@
 #include "input.h"
 #include "main.h"
 #include "player.h"
+#include "result.h"
+#include "title.h"
 
 #include <assert.h>
 
@@ -33,7 +35,7 @@ static void DrawDebug(void);
 //--------------------------------------------------
 static LPDIRECT3D9				s_pD3D = NULL;				//Direct3Dオブジェクトへのポインタ
 static LPDIRECT3DDEVICE9		s_pD3DDevice = NULL;		//Direct3Dデバイスへのポインタ
-static MODE						s_mode = MODE_GAME;			//現在のモード
+static MODE						s_mode = MODE_TITLE;		//現在のモード
 static LPD3DXFONT				s_pFont = NULL;				//フォントへのポインタ
 static int						s_nCountFPS = 0;			//FPSカウンタ
 static bool						s_bDebug = true;			//デバッグ表示をするか [表示  : true 非表示  : false]
@@ -310,8 +312,14 @@ static void Uninit(void)
 	//ジョイパッドの終了処理
 	UninitJoypad();
 
+	//タイトルの終了処理
+	UninitTitle();
+
 	//ゲームの終了処理
 	UninitGame();
+
+	//リザルトの終了処理
+	UninitResult();
 
 	if (s_pFont != NULL)
 	{//デバッグ表示用フォントの破棄
@@ -350,6 +358,7 @@ static void Update(void)
 	switch (s_mode)
 	{//どのモード？
 	case MODE_TITLE:		//タイトル
+		UpdateTitle();
 		break;
 
 	case MODE_RULE:			//ルール
@@ -360,6 +369,7 @@ static void Update(void)
 		break;
 
 	case MODE_RESULT:		//リザルト
+		UpdateResult();
 		break;
 
 	case MODE_RANKING:		//ランキング
@@ -407,6 +417,7 @@ static void Draw(void)
 		switch (s_mode)
 		{//どのモード？
 		case MODE_TITLE:		//タイトル
+			DrawTitle();
 			break;
 
 		case MODE_RULE:			//ルール
@@ -417,6 +428,7 @@ static void Draw(void)
 			break;
 
 		case MODE_RESULT:		//リザルト
+			DrawResult();
 			break;
 
 		case MODE_RANKING:		//ランキング
@@ -466,6 +478,10 @@ static void DrawDebug(void)
 	wsprintf(&aStr[nLength], "ATTACK       : %3d\n", pPlayer->attack);
 	nLength = (int)strlen(&aStr[0]);		//文字数の取得
 
+	wsprintf(&aStr[nLength], "Life         : %3d\n", pPlayer->nLife);
+	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+
+
 	//テキストの描画
 	s_pFont->DrawText(NULL, &aStr[0], -1, &rect, DT_LEFT, D3DCOLOR_RGBA(0, 255, 255, 255));
 }
@@ -487,6 +503,7 @@ void SetMode(MODE mode)
 	switch (s_mode)
 	{//どのモード？
 	case MODE_TITLE:		//タイトル
+		UninitTitle();
 		break;
 
 	case MODE_RULE:			//ルール
@@ -497,6 +514,7 @@ void SetMode(MODE mode)
 		break;
 
 	case MODE_RESULT:		//リザルト
+		UninitResult();
 		break;
 
 	case MODE_RANKING:		//ランキング
@@ -511,6 +529,7 @@ void SetMode(MODE mode)
 	switch (mode)
 	{//どのモード？
 	case MODE_TITLE:		//タイトル
+		InitTitle();
 		break;
 
 	case MODE_RULE:			//ルール
@@ -521,6 +540,7 @@ void SetMode(MODE mode)
 		break;
 
 	case MODE_RESULT:		//リザルト
+		InitResult();
 		break;
 
 	case MODE_RANKING:		//ランキング

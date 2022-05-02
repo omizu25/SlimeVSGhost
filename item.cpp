@@ -4,6 +4,7 @@
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
+#include "enemy.h"
 #include "item.h"
 #include "player.h"
 #include "setup.h"
@@ -25,6 +26,7 @@
 //--------------------------------------------------
 static void InitStruct(Item *pItem);
 static void UpdateOffScreen(Item *pItem);
+static void UpdateCollision(Item *pItem);
 
 //--------------------------------------------------
 //スタティック変数
@@ -138,6 +140,9 @@ void UpdateItem(void)
 
 		//画面外処理
 		UpdateOffScreen(pItem);
+
+		//当たり判定処理
+		UpdateCollision(pItem);
 
 		VERTEX_2D *pVtx;		//頂点情報へのポインタ
 
@@ -264,12 +269,12 @@ void CollisionItem(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove, 
 	{
 		Item *pItem = &s_aItem[i];		//アイテムの情報
 
-		if (!pItem->bUse)
-		{//アイテムが使用されていない
+		if (!pItem->bUse || pItem->type == ITEMTYPE_STAR)
+		{//アイテムが使用されていない、指定の種類じゃない
 			continue;
 		}
 
-		//アイテムが使用されている
+		//アイテムが使用されている、指定の種類
 
 		float fLeft = pItem->pos.x - pItem->fWidth;
 		float fRight = pItem->pos.x + pItem->fWidth;
@@ -299,12 +304,12 @@ void InhaleItem(D3DXVECTOR3 pos, ATTACKSTATE *pAttack, float fWidth, float fHeig
 	{
 		Item *pItem = &s_aItem[i];		//アイテムの情報
 
-		if (!pItem->bUse)
-		{//アイテムが使用されていない
+		if (!pItem->bUse || pItem->type == ITEMTYPE_STAR)
+		{//アイテムが使用されていない、指定の種類じゃない
 			continue;
 		}
 
-		//アイテムが使用されている
+		//アイテムが使用されている、指定の種類
 
 		if (bDirection != pItem->bDirection)
 		{//向きが逆な時
@@ -361,5 +366,52 @@ static void UpdateOffScreen(Item *pItem)
 	if (pItem->pos.x >= SCREEN_WIDTH + ItemSize || pItem->pos.x <= -ItemSize)
 	{//右端か左端
 		pItem->bUse = false;		//使用していない状態にする
+	}
+}
+
+//--------------------------------------------------
+//当たり判定処理
+//--------------------------------------------------
+static void UpdateCollision(Item *pItem)
+{
+	Player *pPlayer = GetPlayer();		//プレイヤーの取得
+
+	if (pItem->pos.y <= (pPlayer->pos.y + pItem->fHeight) &&
+		pItem->pos.y >= (pPlayer->pos.y - pPlayer->fHeight - pItem->fHeight) &&
+		pItem->pos.x <= (pPlayer->pos.x + pPlayer->fWidth + pItem->fWidth) &&
+		pItem->pos.x >= (pPlayer->pos.x - pPlayer->fWidth - pItem->fWidth) &&
+		pPlayer->state == PLAYERSTATE_NORMAL && pPlayer->attack != ATTACKSTATE_IN &&
+		pItem->type == ITEMTYPE_BLOCK && pItem->move.x == 0.0f)
+	{//プレイヤーにブロックが当たった時
+
+		//プレイヤーのヒット処理
+		HitPlayer(5);
+
+		pItem->bUse = false;		//使用していない状態にする
+	}
+
+	Enemy *pEnemy = GetEnemy();		//敵の取得
+
+	for (int i = 0; i < ENEMYTYPE_MAX; i++, pEnemy++)
+	{
+		if (!pEnemy->bUse)
+		{//敵が使用されていない
+			continue;
+		}
+
+		//敵が使用されている
+
+		if (pItem->pos.y <= (pEnemy->pos.y + pItem->fHeight) &&
+			pItem->pos.y >= (pEnemy->pos.y - pEnemy->fHeight - pItem->fHeight) &&
+			pItem->pos.x <= (pEnemy->pos.x + pEnemy->fWidth + pItem->fWidth) &&
+			pItem->pos.x >= (pEnemy->pos.x - pEnemy->fWidth - pItem->fWidth) &&
+			pEnemy->state == ENEMYSTATE_NORMAL && pItem->type == ITEMTYPE_STAR)
+		{//敵にスターが当たった時
+
+			//敵のヒット処理
+			HitEnemy(i, 10);
+
+			pItem->bUse = false;		//使用していない状態にする
+		}
 	}
 }
