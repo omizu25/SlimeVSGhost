@@ -136,9 +136,7 @@ void UpdateItem(void)
 		switch (pItem->type)
 		{
 		case ITEMTYPE_BLOCK:		//ブロック
-			//慣性・移動量を更新 (減衰させる)
-			pItem->move.x += (0.0f - pItem->move.x) * MAX_INERTIA;
-
+			
 			break;
 
 		case ITEMTYPE_STAR:			//スター

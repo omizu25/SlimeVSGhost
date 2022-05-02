@@ -462,7 +462,7 @@ void DrawTutorial(void)
 static void UpdateInput(void)
 {
 	if (GetKeyboardTrigger(DIK_RETURN) || GetKeyboardTrigger(DIK_B) ||
-		GetJoypadTrigger(JOYKEY_B))
+		GetJoypadTrigger(JOYKEY_B) || GetJoypadTrigger(JOYKEY_START))
 	{//決定キー(ENTERキー)が押されたかどうか
 		//フェードの設定
 		SetFade(MODE_TITLE);

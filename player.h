@@ -41,6 +41,7 @@ typedef enum
 	PLAYERSTATE_DAMAGE,			//ƒ_ƒ[ƒWó‘Ô
 	PLAYERSTATE_STAR,			//–³“Gó‘Ô
 	PLAYERSTATE_DEATH,			//€–Só‘Ô
+	PLAYERSTATE_PV,				//PVó‘Ô
 	PLAYERSTATE_MAX
 }PLAYERSTATE;
 
@@ -75,6 +76,7 @@ void InitPlayer(void);
 void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
+void SetPlayer(PLAYERSTATE state);
 Player *GetPlayer(void);
 void HitPlayer(int nDamage);
 

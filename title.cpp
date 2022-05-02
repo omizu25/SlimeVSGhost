@@ -4,21 +4,31 @@
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
+#include "enemy.h"
 #include "fade.h"
+#include "gauge.h"
 #include "input.h"
+#include "item.h"
+#include "player.h"
 #include "ranking.h"
 #include "result.h"
 #include "setup.h"
 #include "sound.h"
 #include "title.h"
 
+#include <assert.h>
+
 //--------------------------------------------------
 //マクロ定義
 //--------------------------------------------------
-#define TITLE_WIDTH			(1000.0f)		//タイトルの幅
+#define MAX_TITLE			(3)				//タイトルの最大数
+#define VS_WIDTH			(150.0f)		//VSの幅
+#define VS_HEIGHT			(200.0f)		//VSの高さ
+#define TITLE_WIDTH			(500.0f)		//タイトルの幅
 #define TITLE_HEIGHT		(350.0f)		//タイトルの高さ
 #define MENU_WIDTH			(550.0f)		//メニューの幅
 #define MENU_HEIGHT			(175.0f)		//メニューの高さ
+#define WIDTH_INTERVAL		(125.0f)		//幅の間隔
 #define HEIGHT_INTERVAL		(125.0f)		//高さの間隔
 
 //--------------------------------------------------
@@ -53,7 +63,7 @@ static void UpdateState(void);
 //スタティック変数
 //--------------------------------------------------
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuffBG = NULL;			//背景の頂点バッファのポインタ
-static LPDIRECT3DTEXTURE9			s_pTexture = NULL;				//テクスチャへのポインタ
+static LPDIRECT3DTEXTURE9			s_pTexture[MAX_TITLE];			//テクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;				//頂点バッファのポインタ
 static LPDIRECT3DTEXTURE9			s_pTextureMenu[MENU_MAX];		//メニューのテクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuffMenu = NULL;			//メニューの頂点バッファのポインタ
@@ -69,6 +79,9 @@ void InitTitle(void)
 {
 	//デバイスへのポインタの取得
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
+
+	//メモリのクリア
+	memset(&s_pTexture[0], NULL, sizeof(s_pTexture));
 	
 	//メモリのクリア
 	memset(&s_pTextureMenu[0], NULL, sizeof(s_pTextureMenu));
@@ -76,8 +89,20 @@ void InitTitle(void)
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
-		"Data\\TEXTURE\\title001.png",
-		&s_pTexture);
+		"Data\\TEXTURE\\title013.png",
+		&s_pTexture[0]);
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\title014.png",
+		&s_pTexture[1]);
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\title015.png",
+		&s_pTexture[2]);
 
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
@@ -113,7 +138,7 @@ void InitTitle(void)
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
-		sizeof(VERTEX_2D) * 4,
+		sizeof(VERTEX_2D) * 4 * MAX_TITLE,
 		D3DUSAGE_WRITEONLY,
 		FVF_VERTEX_2D,
 		D3DPOOL_MANAGED,
@@ -153,21 +178,51 @@ void InitTitle(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
-	float fTitleWidth = TITLE_WIDTH * 0.5f;
-	float fTitleHeight = TITLE_HEIGHT * 0.5f;
-	D3DXVECTOR3 TitlePos = D3DXVECTOR3(fWidth - 45.0f, fHeight - 175.0f, 0.0f);
+	for (int i = 0; i < MAX_TITLE; i++)
+	{
+		float fTitleWidth = 0.0f;
+		float fTitleHeight = 0.0f;
+		D3DXVECTOR3 TitlePos = D3DXVECTOR3(0.0f, fHeight - 175.0f, 0.0f);
 
-	//頂点座標の設定処理
-	SetMiddlepos(pVtx, TitlePos, fTitleWidth, fTitleHeight);
+		switch (i)
+		{
+		case 0:
+			TitlePos.x = 280.0f;
+			fTitleWidth = TITLE_WIDTH * 0.5f;
+			fTitleHeight = TITLE_HEIGHT * 0.5f;
+			break;
 
-	//rhwの初期化処理
-	Initrhw(pVtx);
+		case 1:
+			TitlePos.x = 630.0f;
+			fTitleWidth = VS_WIDTH * 0.5f;
+			fTitleHeight = VS_HEIGHT * 0.5f;
+			break;
 
-	//頂点カラーの初期化処理
-	Initcol(pVtx);
+		case 2:
+			TitlePos.x = 1005.0f;
+			fTitleWidth = TITLE_WIDTH * 0.5f;
+			fTitleHeight = TITLE_HEIGHT * 0.5f;
+			break;
 
-	//テクスチャ座標の設定処理
-	Settex(pVtx, 0.002f, 0.998f, 0.0f, 1.0f);
+		default:
+			assert(false);
+			break;
+		}
+
+		//頂点座標の設定処理
+		SetMiddlepos(pVtx, TitlePos, fTitleWidth, fTitleHeight);
+
+		//rhwの初期化処理
+		Initrhw(pVtx);
+
+		//頂点カラーの初期化処理
+		Initcol(pVtx);
+
+		//テクスチャ座標の設定処理
+		Settex(pVtx, 0.005f, 0.998f, 0.005f, 1.0f);
+
+		pVtx += 4;		//頂点データのポインタを４つ分進める
+	}
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
@@ -199,6 +254,30 @@ void InitTitle(void)
 	//頂点バッファをアンロックする
 	s_pVtxBuffMenu->Unlock();
 
+	//ゲージの初期化処理
+	InitGauge();
+
+	//アイテムの初期化処理
+	InitItem();
+
+	//プレイヤーの初期化処理
+	InitPlayer();
+
+	//敵の初期化処理
+	InitEnemy();
+
+	//敵の設定処理
+	SetEnemy(D3DXVECTOR3(900.0f, 525.0f, 0.0f), ENEMYTYPE_BOY);
+
+	//敵の設定処理
+	SetEnemy(D3DXVECTOR3(SCREEN_WIDTH + (ENEMY_WIDTH * 0.5f), 680.0f, 0.0f), ENEMYTYPE_GIRL);
+
+	//敵の状態設定処理
+	SetEnemyState(ENEMYSTATE_PV);
+
+	//プレイヤーの設定処理
+	SetPlayer(PLAYERSTATE_PV);
+
 	//サウンドの再生
 	PlaySound(SOUND_LABEL_IN_THE_WAY);
 }
@@ -217,10 +296,13 @@ void UninitTitle(void)
 		s_pVtxBuffBG = NULL;
 	}
 
-	if (s_pTexture != NULL)
-	{//テクスチャの破棄
-		s_pTexture->Release();
-		s_pTexture = NULL;
+	for (int i = 0; i < MAX_TITLE; i++)
+	{
+		if (s_pTexture[i] != NULL)
+		{//テクスチャの破棄
+			s_pTexture[i]->Release();
+			s_pTexture[i] = NULL;
+		}
 	}
 
 	if (s_pVtxBuff != NULL)
@@ -243,6 +325,15 @@ void UninitTitle(void)
 		s_pVtxBuffMenu->Release();
 		s_pVtxBuffMenu = NULL;
 	}
+
+	//ゲージの終了処理
+	UninitGauge();
+
+	//プレイヤーの終了処理
+	UninitPlayer();
+
+	//敵の終了処理
+	UninitEnemy();
 }
 
 //--------------------------------------------------
@@ -280,6 +371,15 @@ void UpdateTitle(void)
 
 	//頂点バッファをアンロックする
 	s_pVtxBuffMenu->Unlock();
+
+	//プレイヤーの更新処理
+	UpdatePlayer();
+
+	//敵の更新処理
+	UpdateEnemy();
+
+	//アイテムの更新処理
+	UpdateItem();
 }
 
 //--------------------------------------------------
@@ -311,14 +411,23 @@ void DrawTitle(void)
 	//頂点フォーマットの設定
 	pDevice->SetFVF(FVF_VERTEX_2D);
 
-	//テクスチャの設定
-	pDevice->SetTexture(0, s_pTexture);
+	for (int i = 0; i < MAX_TITLE; i++)
+	{
+		//テクスチャの設定
+		pDevice->SetTexture(0, s_pTexture[i]);
 
-	//ポリゴンの描画
-	pDevice->DrawPrimitive(
-		D3DPT_TRIANGLESTRIP,		//プリミティブの種類
-		0,							//描画する最初の頂点インデックス
-		2);							//プリミティブ(ポリゴン)数
+		//ポリゴンの描画
+		pDevice->DrawPrimitive(
+			D3DPT_TRIANGLESTRIP,		//プリミティブの種類
+			i * 4,						//描画する最初の頂点インデックス
+			2);							//プリミティブ(ポリゴン)数
+	}
+
+	//敵の描画処理
+	DrawEnemy();
+
+	//アイテムの描画処理
+	DrawItem(ITEMTYPE_BLOCK);
 
 	//頂点バッファをデータストリームに設定
 	pDevice->SetStreamSource(0, s_pVtxBuffMenu, 0, sizeof(VERTEX_2D));
@@ -337,6 +446,9 @@ void DrawTitle(void)
 			i * 4,						//描画する最初の頂点インデックス
 			2);							//プリミティブ(ポリゴン)数
 	}
+
+	//プレイヤーの描画処理
+	DrawPlayer();
 }
 
 //--------------------------------------------------
@@ -387,7 +499,8 @@ static void UpdateInput(VERTEX_2D *pVtx)
 //--------------------------------------------------
 static void UpdateMenu(void)
 {
-	if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
+	if (GetKeyboardTrigger(DIK_RETURN) || 
+		GetJoypadTrigger(JOYKEY_B) || GetJoypadTrigger(JOYKEY_START))
 	{//決定キー(ENTERキー)が押されたかどうか
 		if (s_Menu == MENU_GAME)
 		{//ゲームのとき

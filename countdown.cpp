@@ -29,6 +29,7 @@ static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;		//頂点バッファのポインタ
 static D3DXVECTOR3					s_pos;					//位置
 static int							s_nCountdown;			//カウントダウンの値
 static int							s_nSecond;				//１秒
+static bool							s_bCountdown;			//カウントダウンしてるかどうか
 
 //--------------------------------------------------
 //カウントダウンの初期化処理

@@ -138,7 +138,7 @@ void UpdateEnemy(void)
 
 		//敵が使用されている
 
-		if (pEnemy->state != ENEMYSTATE_DEATH)
+		if (pEnemy->state != ENEMYSTATE_DEATH && pEnemy->state != ENEMYSTATE_PV)
 		{//生きてる
 			//前回の位置の記憶
 			pEnemy->posOld = pEnemy->pos;
@@ -291,6 +291,63 @@ void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type)
 		PopItem(pEnemy);
 
 		break;		//ここでfor文を抜ける
+	}
+}
+
+//--------------------------------------------------
+//敵の状態設定処理
+//--------------------------------------------------
+void SetEnemyState(ENEMYSTATE state)
+{
+	for (int i = 0; i < ENEMYTYPE_MAX; i++)
+	{
+		Enemy *pEnemy = &s_aEnemy[i];
+
+		if (!pEnemy->bUse)
+		{//敵が使用されていない
+			continue;
+		}
+
+		//敵が使用されている
+		pEnemy->state = state;
+
+		if (state == ENEMYSTATE_PV)
+		{//PV状態
+			switch (pEnemy->type)
+			{
+			case ENEMYTYPE_BOY:			//男の子
+
+				pEnemy->col = D3DXCOLOR(1.0f, 1.0f, 1.0f, 0.0f);
+
+				break;
+
+			case ENEMYTYPE_GIRL:		//女の子
+
+				pEnemy->col = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+
+				break;
+
+			default:
+				assert(false);
+				break;
+			}
+
+			VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+			//頂点情報をロックし、頂点情報へのポインタを取得
+			s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+			pVtx += (i * 4);		//該当の位置まで進める
+
+			float fPattren = (float)pEnemy->nPatternAnim / MAX_U_PATTERN;
+			float fDirection = (float)pEnemy->bDirection / MAX_V_PATTERN;
+
+			//テクスチャ座標の設定処理
+			Settex(pVtx, fPattren + 0.01f, (fPattren + (1.0f / MAX_U_PATTERN)) - 0.01f, fDirection + 0.01f, fDirection + (1.0f / MAX_V_PATTERN));
+
+			//頂点バッファをアンロックする
+			s_pVtxBuff->Unlock();
+		}
 	}
 }
 
@@ -457,11 +514,10 @@ static void UpdateCollision(Enemy *pEnemy)
 
 	if (pEnemy->pos.y <= (pPlayer->pos.y + pEnemy->fHeight) &&
 		pEnemy->pos.y >= (pPlayer->pos.y - pPlayer->fHeight) &&
-		pEnemy->pos.x <= (pPlayer->pos.x + pPlayer->fWidth + pEnemy->fWidth) &&
-		pEnemy->pos.x >= (pPlayer->pos.x - pPlayer->fWidth - pEnemy->fWidth) &&
+		pEnemy->pos.x <= (pPlayer->pos.x + (pPlayer->fWidth * 0.8f) + pEnemy->fWidth) &&
+		pEnemy->pos.x >= (pPlayer->pos.x - (pPlayer->fWidth * 0.8f) - pEnemy->fWidth) &&
 		pEnemy->state != ENEMYSTATE_DEATH)
 	{//プレイヤーに敵が当たった時
-
 		//プレイヤーのヒット処理
 		HitPlayer(20);
 	}
@@ -528,6 +584,70 @@ static void UpdateState(VERTEX_2D *pVtx, Enemy *pEnemy)
 
 				//ランキングの設定処理
 				SetRanking(GetTime());
+			}
+		}
+
+		//頂点カラーの設定処理
+		Setcol(pVtx, pEnemy->col.r, pEnemy->col.g, pEnemy->col.b, pEnemy->col.a);
+
+		break;
+
+	case ENEMYSTATE_PV:		//PV状態
+
+		//前回の位置の記憶
+		pEnemy->posOld = pEnemy->pos;
+
+		//位置の更新
+		pEnemy->pos += pEnemy->move;
+
+		if (pEnemy->bDirection)
+		{//右向き
+			//アイテムの当たり判定処理
+			CollisionItem(&pEnemy->pos, &pEnemy->posOld, pEnemy->fWidth, pEnemy->fHeight);
+		}
+		else
+		{//左向き
+			if (pEnemy->col.a >= 1.0f)
+			{
+				//アイテムの当たり判定処理
+				CollisionItem(&pEnemy->pos, &pEnemy->posOld, pEnemy->fWidth, pEnemy->fHeight);
+			}
+		}
+		
+		if (pEnemy->pos.x <= 850.0f || pEnemy->pos.x >= SCREEN_WIDTH + ENEMY_WIDTH)
+		{
+			pEnemy->bDirection = !pEnemy->bDirection;
+			pEnemy->move.x *= -1.0f;
+		}
+
+		if (pEnemy->pos.x >= SCREEN_WIDTH + ENEMY_WIDTH)
+		{
+			//アイテムのポップ処理
+			PopItem(pEnemy);
+		}
+
+		if (pEnemy->pos.x <= 1050.0f)
+		{//指定の位置
+			if (pEnemy->bDirection)
+			{//右向き
+				if (pEnemy->pos.x > 900.0f)
+				{
+					pEnemy->col.a += 0.025f;
+
+					if (pEnemy->col.a >= 1.0f)
+					{
+						pEnemy->col.a = 1.0f;
+					}
+				}
+			}
+			else
+			{//左向き
+				pEnemy->col.a -= 0.025f;
+
+				if (pEnemy->col.a <= 0.0f)
+				{
+					pEnemy->col.a = 0.0f;
+				}
 			}
 		}
 

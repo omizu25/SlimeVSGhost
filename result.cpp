@@ -37,6 +37,12 @@ static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;				//頂点バッファのポインタ
 static LPDIRECT3DTEXTURE9			s_pTextureTime = NULL;			//タイムのテクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuffTime = NULL;			//タイムの頂点バッファのポインタ
 static RESULT						s_Result;						//リザルトの情報
+static int							s_nTime;						//タイム
+
+//--------------------------------------------------
+//プロトタイプ宣言
+//--------------------------------------------------
+static void UpdateMode(void);
 
 //--------------------------------------------------
 //リザルトの初期化処理
@@ -81,6 +87,8 @@ void InitResult(void)
 		pDevice,
 		"Data\\TEXTURE\\result009.png",
 		&s_pTextureTime);
+
+	s_nTime = 0;
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -316,27 +324,21 @@ void UninitResult(void)
 //--------------------------------------------------
 void UpdateResult(void)
 {
-	if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
+	if (GetKeyboardTrigger(DIK_RETURN) ||
+		GetJoypadTrigger(JOYKEY_B) || GetJoypadTrigger(JOYKEY_START))
 	{//決定キー(ENTERキー)が押されたかどうか
-		switch (s_Result)
-		{
-		case RESULT_WIN:		//勝ち
-			//フェード設定
-			SetFade(MODE_RANKING);
-			break;
+		//モード処理
+		UpdateMode();
+	}
 
-		case RESULT_LOSE:		//負け
-			//フェード設定
-			SetFade(MODE_TITLE);
-			break;
+	s_nTime++;
 
-		case RESULT_NONE:		//何もしていない状態
-
-			//breakなし　
-
-		default:
-			assert(false);
-			break;
+	if (s_nTime >= 900)
+	{
+		if (GetFade() == FADE_NONE)
+		{//まだフェードしてない
+			//モード処理
+			UpdateMode();
 		}
 	}
 
@@ -418,5 +420,32 @@ void SetResult(RESULT Result)
 	if (s_Result == RESULT_NONE || Result == RESULT_NONE)
 	{//まだリザルトが決まってない、リザルトの初期化
 		s_Result = Result;		//リザルトを代入
+	}
+}
+
+//--------------------------------------------------
+//モード処理
+//--------------------------------------------------
+static void UpdateMode(void)
+{
+	switch (s_Result)
+	{
+	case RESULT_WIN:		//勝ち
+		//フェード設定
+		SetFade(MODE_RANKING);
+		break;
+
+	case RESULT_LOSE:		//負け
+		//フェード設定
+		SetFade(MODE_TITLE);
+		break;
+
+	case RESULT_NONE:		//何もしていない状態
+
+		//breakなし　
+
+	default:
+		assert(false);
+		break;
 	}
 }

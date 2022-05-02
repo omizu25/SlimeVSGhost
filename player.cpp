@@ -20,18 +20,20 @@
 //--------------------------------------------------
 //マクロ定義
 //--------------------------------------------------
-#define PLAYER_WIDTH		(80.0f)			//プレイヤーの幅
-#define PLAYER_HEIGHT		(70.0f)			//プレイヤーの高さ
-#define MAX_MOVE			(0.3f)			//移動量の最大値
-#define MIN_MOVE			(0.1f)			//移動量の最小値
-#define EFFECT_MOVE			(2.0f)			//エフェクトの出る移動量
-#define MAX_TEX				(3)				//テクスチャの最大数
-#define MAX_U_PATTERN		(2)				//Uパターンの最大数
-#define MAX_JUMP			(-27.5f)		//ジャンプ量
-#define MAX_GRAVITY			(1.5f)			//重力の最大値
-#define MAX_INERTIA			(0.05f)			//慣性の最大値
-#define MAX_INTERVAL		(7)				//カウンターのインターバル
-#define START_DEATH			(30)			//死亡の動きの始まり
+#define PLAYER_WIDTH			(80.0f)			//プレイヤーの幅
+#define PLAYER_HEIGHT			(70.0f)			//プレイヤーの高さ
+#define MAX_MOVE				(0.3f)			//移動量の最大値
+#define MIN_MOVE				(0.1f)			//移動量の最小値
+#define EFFECT_MOVE				(2.0f)			//エフェクトの出る移動量
+#define MAX_TEX					(3)				//テクスチャの最大数
+#define MAX_U_PATTERN			(2)				//Uパターンの最大数
+#define MAX_JUMP				(-27.5f)		//ジャンプ量
+#define MAX_GRAVITY				(1.5f)			//重力の最大値
+#define MAX_INERTIA				(0.05f)			//慣性の最大値
+#define MAX_INTERVAL			(7)				//カウンターのインターバル
+#define START_DEATH				(30)			//死亡の動きの始まり
+#define PV_JUMP_INTERVAL		(180)			//PVの時のジャンプタイミング
+#define PV_JUMP					(-30.0f)		//PVの時のジャンプ力
 
 //--------------------------------------------------
 //プロトタイプ宣言
@@ -180,8 +182,11 @@ void UpdatePlayer(void)
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
 
-	//エフェクトの設定処理
-	UpdateSetEffect();
+	if (s_Player.state != PLAYERSTATE_PV)
+	{//PVじゃない
+		//エフェクトの設定処理
+		UpdateSetEffect();
+	}
 }
 
 //--------------------------------------------------
@@ -202,6 +207,7 @@ void DrawPlayer(void)
 	{
 	case PLAYERSTATE_NORMAL:		//通常状態
 	case PLAYERSTATE_DEATH:			//死亡状態
+	case PLAYERSTATE_PV:			//PV状態
 
 		//ポリゴンとテクスチャのαをまぜる
 		pDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
@@ -258,6 +264,31 @@ void DrawPlayer(void)
 }
 
 //--------------------------------------------------
+//プレイヤーの設定処理
+//--------------------------------------------------
+void SetPlayer(PLAYERSTATE state)
+{
+	s_Player.state = state;
+
+	if (state == PLAYERSTATE_PV)
+	{//PVの時
+		VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+		//頂点情報をロックし、頂点情報へのポインタを取得
+		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+		s_Player.pos.x = SCREEN_WIDTH * 0.15f;
+		s_Player.pos.y = SCREEN_HEIGHT;
+
+		//頂点座標の設定処理
+		SetBottompos(pVtx, s_Player.pos, s_Player.fWidth, s_Player.fHeight);
+
+		//頂点バッファをアンロックする
+		s_pVtxBuff->Unlock();
+	}
+}
+
+//--------------------------------------------------
 //プレイヤーの取得処理
 //--------------------------------------------------
 Player *GetPlayer(void)
@@ -265,9 +296,9 @@ Player *GetPlayer(void)
 	return &s_Player;
 }
 
-//-------------------------
+//--------------------------------------------------
 //プレイヤーのヒット処理
-//-------------------------
+//--------------------------------------------------
 void HitPlayer(int nDamage)
 {
 	if (s_Player.state == PLAYERSTATE_NORMAL)
@@ -423,6 +454,38 @@ static void UpdateState(VERTEX_2D *pVtx)
 
 		break;
 
+	case PLAYERSTATE_PV:		//PV状態
+
+		s_Player.nCounterState++;
+
+		if (s_Player.jump == JUMPSTATE_NONE)
+		{//ジャンプしてない
+			if (s_Player.nCounterState % PV_JUMP_INTERVAL == 0 || s_Player.nCounterState == 60)
+			{//一定間隔で
+				s_Player.move.y += PV_JUMP;
+				s_Player.jump = JUMPSTATE_JUMP;
+				s_Player.fHeight = PLAYER_HEIGHT;
+				s_Player.nCounterMotion = 0;
+
+				//サウンドの再生
+				PlaySound(SOUND_LABEL_SE_JUMP);
+			}
+
+			if (GetKeyboardTrigger(DIK_RETURN) || GetKeyboardTrigger(DIK_W) || GetKeyboardTrigger(DIK_S) ||
+				GetJoypadTrigger(JOYKEY_A) || GetJoypadTrigger(JOYKEY_UP) || GetJoypadTrigger(JOYKEY_DOWN))
+			{//スペースキー、Wキー、Sキーが押された
+				s_Player.move.y += PV_JUMP;
+				s_Player.jump = JUMPSTATE_JUMP;
+				s_Player.fHeight = PLAYER_HEIGHT;
+				s_Player.nCounterMotion = 0;
+
+				//サウンドの再生
+				PlaySound(SOUND_LABEL_SE_JUMP);
+			}
+		}
+
+		break;
+
 	default:
 		assert(false);
 		break;
@@ -439,7 +502,8 @@ static void UpdateMove(VERTEX_2D *pVtx)
 	//攻撃処理
 	UpdateAttack();
 
-	if (s_Player.attack != ATTACKSTATE_IN && s_Player.attack != ATTACKSTATE_OUT)
+	if (s_Player.attack != ATTACKSTATE_IN && s_Player.attack != ATTACKSTATE_OUT &&
+		s_Player.state != PLAYERSTATE_PV)
 	{//吸い込んでない
 		//キー入力での移動
 		if (GetKeyboardPress(DIK_A) || GetJoypadPress(JOYKEY_LEFT))
@@ -507,13 +571,13 @@ static void UpdateMove(VERTEX_2D *pVtx)
 
 		//ジャンプ、降りる処理
 		bDown = UpdateUpDown();
+
+		//スティックでの移動量の更新
+		s_Player.move.x += GetJoypadStick(JOYKEY_L_STICK).x;
 	}
 
 	//重力
 	s_Player.move.y += MAX_GRAVITY;
-
-	//スティックでの移動量の更新
-	s_Player.move.x += GetJoypadStick(JOYKEY_L_STICK).x;
 
 	//前回の位置の記憶
 	s_Player.posOld = s_Player.pos;
@@ -530,8 +594,8 @@ static void UpdateMove(VERTEX_2D *pVtx)
 	}
 	else
 	{//空中
-		if (s_Player.jump == JUMPSTATE_NONE)
-		{//何もしていない
+		if (s_Player.jump == JUMPSTATE_NONE && s_Player.state != PLAYERSTATE_PV)
+		{//何もしていない、PVじゃない
 			s_Player.jump = JUMPSTATE_JUMP;
 			s_Player.fHeight = PLAYER_HEIGHT;
 			s_Player.nCounterMotion = 0;
@@ -556,67 +620,70 @@ static void UpdateMove(VERTEX_2D *pVtx)
 //--------------------------------------------------
 static void UpdateAttack(void)
 {
-	switch (s_Player.attack)
-	{
-	case ATTACKSTATE_NONE:			//何もしていない状態
-		if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
-		{//ENTERキーが押された
-			s_Player.attack = ATTACKSTATE_IN;
-			s_Player.move.x = 0.0f;
-		}
-
-		break;
-
-	case ATTACKSTATE_IN:			//吸い込んでる状態
-		if (GetKeyboardPress(DIK_RETURN) || GetJoypadPress(JOYKEY_B))
-		{//ENTERキーが押された
-			//アイテムの吸い込み処理
-			InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
-
-			//サウンドの再生
-			PlaySound(SOUND_LABEL_SE_IN);
-
-			s_Player.nCounterAttack = 0;
-		}
-		else if (s_Player.nCounterAttack <= MAX_INTERVAL)
-		{//余韻中
-			//アイテムの吸い込み処理
-			InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
-		}
-		else
-		{//吸い込めてない
-			s_Player.attack = ATTACKSTATE_NONE;
-			s_Player.nCounterAttack = 0;
-		}
-
-		s_Player.nCounterAttack++;
-
-		break;
-
-	case ATTACKSTATE_STORE:			//蓄えている状態
-		if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
-		{//ENTERキーが押された
-			//アイテムの設定処理
-			SetItem(s_Player.pos - D3DXVECTOR3(0.0f, s_Player.fHeight * 0.5f, 0.0f), ITEMTYPE_STAR, s_Player.bDirection);
-			s_Player.attack = ATTACKSTATE_OUT;
-		}
-
-		break;
-
-	case ATTACKSTATE_OUT:			//吐き出す状態
-		s_Player.nCounterAttack++;
-
-		if (s_Player.nCounterAttack >= MAX_INTERVAL)
+	if (s_Player.state != PLAYERSTATE_PV)
+	{//PVじゃない
+		switch (s_Player.attack)
 		{
-			s_Player.attack = ATTACKSTATE_NONE;
-			s_Player.nCounterAttack = 0;
+		case ATTACKSTATE_NONE:			//何もしていない状態
+			if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
+			{//ENTERキーが押された
+				s_Player.attack = ATTACKSTATE_IN;
+				s_Player.move.x = 0.0f;
+			}
+
+			break;
+
+		case ATTACKSTATE_IN:			//吸い込んでる状態
+			if (GetKeyboardPress(DIK_RETURN) || GetJoypadPress(JOYKEY_B))
+			{//ENTERキーが押された
+				//アイテムの吸い込み処理
+				InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
+
+				//サウンドの再生
+				PlaySound(SOUND_LABEL_SE_IN);
+
+				s_Player.nCounterAttack = 0;
+			}
+			else if (s_Player.nCounterAttack <= MAX_INTERVAL)
+			{//余韻中
+				//アイテムの吸い込み処理
+				InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
+			}
+			else
+			{//吸い込めてない
+				s_Player.attack = ATTACKSTATE_NONE;
+				s_Player.nCounterAttack = 0;
+			}
+
+			s_Player.nCounterAttack++;
+
+			break;
+
+		case ATTACKSTATE_STORE:			//蓄えている状態
+			if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
+			{//ENTERキーが押された
+				//アイテムの設定処理
+				SetItem(s_Player.pos - D3DXVECTOR3(0.0f, s_Player.fHeight * 0.5f, 0.0f), ITEMTYPE_STAR, s_Player.bDirection);
+				s_Player.attack = ATTACKSTATE_OUT;
+			}
+
+			break;
+
+		case ATTACKSTATE_OUT:			//吐き出す状態
+			s_Player.nCounterAttack++;
+
+			if (s_Player.nCounterAttack >= MAX_INTERVAL)
+			{
+				s_Player.attack = ATTACKSTATE_NONE;
+				s_Player.nCounterAttack = 0;
+			}
+
+			break;
+
+		default:
+			assert(false);
+			break;
 		}
-
-		break;
-
-	default:
-		assert(false);
-		break;
 	}
 }
 

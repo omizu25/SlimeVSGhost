@@ -12,8 +12,8 @@
 //--------------------------------------------------
 //マクロ定義
 //--------------------------------------------------
-#define ENEMY_WIDTH			(100.0f)		//敵の幅の半分
-#define ENEMY_HEIGHT		(100.0f)		//敵の高さの半分
+#define ENEMY_WIDTH			(100.0f)		//敵の幅
+#define ENEMY_HEIGHT		(100.0f)		//敵の高さ
 
 //-------------------------
 //敵の種類を定義
@@ -33,6 +33,7 @@ typedef enum
 	ENEMYSTATE_NORMAL = 0,		//通常状態
 	ENEMYSTATE_DAMAGE,			//ダメージ状態
 	ENEMYSTATE_DEATH,			//死亡状態
+	ENEMYSTATE_PV,				//PV状態
 	ENEMYSTATE_MAX
 }ENEMYSTATE;
 
@@ -78,6 +79,7 @@ void UninitEnemy(void);
 void UpdateEnemy(void);
 void DrawEnemy(void);
 void SetEnemy(D3DXVECTOR3 pos, ENEMYTYPE type);
+void SetEnemyState(ENEMYSTATE state);
 Enemy *GetEnemy(void);
 void HitEnemy(int nCntEnemy, int nDamage);
 
