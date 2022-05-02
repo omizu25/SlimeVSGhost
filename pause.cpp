@@ -206,6 +206,12 @@ void InitPause(void)
 //--------------------------------------------------
 void UninitPause(void)
 {
+	if (s_pVtxBuff != NULL)
+	{//頂点バッファの破棄
+		s_pVtxBuff->Release();
+		s_pVtxBuff = NULL;
+	}
+
 	for (int i = 0; i < MENU_MAX; i++)
 	{
 		if (s_pTextureMenu[i] != NULL)
@@ -213,12 +219,6 @@ void UninitPause(void)
 			s_pTextureMenu[i]->Release();
 			s_pTextureMenu[i] = NULL;
 		}
-	}
-
-	if (s_pVtxBuff != NULL)
-	{//頂点バッファの破棄
-		s_pVtxBuff->Release();
-		s_pVtxBuff = NULL;
 	}
 
 	if (s_pVtxBuffMenu != NULL)

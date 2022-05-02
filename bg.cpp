@@ -62,7 +62,7 @@ void InitBG(void)
 		if (i == 0)
 		{
 			//’¸“_ƒJƒ‰[‚Ìİ’èˆ—
-			Setcol(pVtx, 1.0f, 1.0f, 0.5f, 1.0f);
+			Setcol(pVtx, 0.615f, 0.215f, 0.341f, 1.0f);
 		}
 		else
 		{

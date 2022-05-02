@@ -51,6 +51,29 @@ void SetRightpos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
 }
 
 //--------------------------------------------------
+//頂点座標の設定処理 (回転)
+//--------------------------------------------------
+void SetRotpos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fRot, float fLength, float fAngle)
+{
+	//頂点座標の更新
+	pVtx[0].pos.x = pos.x + sinf(fRot + (-D3DX_PI + fAngle)) * fLength;
+	pVtx[0].pos.y = pos.y + cosf(fRot + (-D3DX_PI + fAngle)) * fLength;
+	pVtx[0].pos.z = 0.0f;
+
+	pVtx[1].pos.x = pos.x + sinf(fRot + (D3DX_PI - fAngle)) * fLength;
+	pVtx[1].pos.y = pos.y + cosf(fRot + (D3DX_PI - fAngle)) * fLength;
+	pVtx[1].pos.z = 0.0f;
+
+	pVtx[2].pos.x = pos.x + sinf(fRot + (fAngle * -1.0f)) * fLength;
+	pVtx[2].pos.y = pos.y + cosf(fRot + (fAngle * -1.0f)) * fLength;
+	pVtx[2].pos.z = 0.0f;
+
+	pVtx[3].pos.x = pos.x + sinf(fRot + fAngle) * fLength;
+	pVtx[3].pos.y = pos.y + cosf(fRot + fAngle) * fLength;
+	pVtx[3].pos.z = 0.0f;
+}
+
+//--------------------------------------------------
 //頂点カラーの設定処理
 //--------------------------------------------------
 void Setcol(VERTEX_2D *pVtx, float Red, float Green, float Blue, float Alpha)

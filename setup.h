@@ -16,6 +16,7 @@ void SetMiddlepos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight)
 void SetBottompos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight);
 void SetLeftpos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight);
 void SetRightpos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight);
+void SetRotpos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fRot, float fLength, float fAngle);
 void Setcol(VERTEX_2D *pVtx, float Red, float Green, float Blue, float Alpha);
 void Settex(VERTEX_2D *pVtx, float ULeft, float URight, float VTop, float VBottom);
 void Initpos(VERTEX_2D *pVtx);

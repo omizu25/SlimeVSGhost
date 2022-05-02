@@ -58,7 +58,6 @@ typedef struct
 	float			fHeight;			//高さ
 	float			fCol;				//カラー
 	int				nCounterState;		//状態管理カウンター
-	int				nCounterJump;		//ジャンプカウンター
 	int				nCounterMotion;		//モーションカウンター
 	int				nCounterAttack;		//攻撃カウンター
 	int				nLife;				//寿命

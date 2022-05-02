@@ -70,7 +70,7 @@ void InitGame(void)
 	SetPop();
 
 	//エフェクトの初期化処理
-	//InitEffect();
+	InitEffect();
 
 	//プレイヤーの初期化処理
 	InitPlayer();
@@ -106,7 +106,7 @@ void UninitGame(void)
 	UninitEnemy();
 
 	//エフェクトの終了処理
-	//UninitEffect();
+	UninitEffect();
 
 	//プレイヤーの終了処理
 	UninitPlayer();
@@ -160,7 +160,7 @@ void UpdateGame(void)
 			UpdateEnemy();
 
 			//エフェクトの更新処理
-			//UpdateEffect();
+			UpdateEffect();
 
 			//プレイヤーの更新処理
 			UpdatePlayer();
@@ -216,6 +216,9 @@ void DrawGame(void)
 	//ブロックの描画処理
 	DrawBlock();
 
+	//エフェクト描画処理
+	DrawEffect(EFFECTTYPE_STAR);
+
 	//アイテムの描画処理
 	DrawItem();
 
@@ -223,10 +226,16 @@ void DrawGame(void)
 	DrawEnemy();
 
 	//エフェクト描画処理
-	//DrawEffect();
+	DrawEffect(EFFECTTYPE_MOVE);
 
 	//プレイヤーの描画処理
 	DrawPlayer();
+
+	//エフェクト描画処理
+	DrawEffect(EFFECTTYPE_IN);
+
+	//エフェクト描画処理
+	DrawEffect(EFFECTTYPE_EXPLOSION);
 
 	//ゲージの描画処理
 	DrawGauge();

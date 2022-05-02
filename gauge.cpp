@@ -106,6 +106,12 @@ void UninitGauge(void)
 		s_pVtxBuff->Release();
 		s_pVtxBuff = NULL;
 	}
+
+	if (s_pVtxBuffFrame != NULL)
+	{//フレームの頂点バッファの破棄
+		s_pVtxBuffFrame->Release();
+		s_pVtxBuffFrame = NULL;
+	}
 }
 
 //--------------------------------------------------

@@ -4,6 +4,7 @@
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
+#include "effect.h"
 #include "enemy.h"
 #include "input.h"
 #include "item.h"
@@ -131,10 +132,25 @@ void UpdateItem(void)
 		//位置を更新
 		pItem->pos += pItem->move;
 		
-		if (pItem->type == ITEMTYPE_BLOCK)
-		{//ブロックの時
+		switch (pItem->type)
+		{
+		case ITEMTYPE_BLOCK:		//ブロック
 			//慣性・移動量を更新 (減衰させる)
 			pItem->move.x += (0.0f - pItem->move.x) * MAX_INERTIA;
+
+			break;
+
+		case ITEMTYPE_STAR:			//スター
+			pItem->fRot += -0.5f;
+
+			//パーティクルの設定処理
+			SetParticle(pItem->pos, EFFECTTYPE_STAR, pItem->bDirection);
+
+			break;
+
+		default:
+			assert(false);
+			break;
 		}
 
 		//画面外処理
@@ -150,8 +166,30 @@ void UpdateItem(void)
 
 		pVtx += (i * 4);		//該当の位置まで進める
 
-		//頂点座標の設定処理
-		SetMiddlepos(pVtx, pItem->pos, pItem->fWidth, pItem->fHeight);
+		switch (pItem->type)
+		{
+		case ITEMTYPE_BLOCK:		//ブロック
+			pItem->move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+
+			//頂点座標の設定処理
+			SetMiddlepos(pVtx, pItem->pos, pItem->fWidth, pItem->fHeight);
+
+			break;
+
+		case ITEMTYPE_STAR:			//スター
+
+			//頂点座標の設定処理
+			SetRotpos(pVtx, pItem->pos, pItem->fRot, pItem->fLength, pItem->fAngle);
+
+			pItem->fWidth = (pVtx[0].pos.x - pVtx[1].pos.x) * 0.5f;
+			pItem->fHeight = (pVtx[0].pos.y - pVtx[2].pos.y) * 0.5f;
+
+			break;
+
+		default:
+			assert(false);
+			break;
+		}
 
 		//頂点バッファをアンロックする
 		s_pVtxBuff->Unlock();
@@ -219,6 +257,9 @@ void SetItem(D3DXVECTOR3 pos, ITEMTYPE type, bool bDirection)
 		pItem->type = type;
 		pItem->fWidth = ITEM_SIZE * 0.5f;
 		pItem->fHeight = ITEM_SIZE * 0.5f;
+		pItem->fRot = 0.0f;
+		pItem->fLength = sqrtf(pItem->fWidth * pItem->fWidth + pItem->fHeight * pItem->fHeight);
+		pItem->fAngle = atan2f(pItem->fWidth, pItem->fHeight);
 		pItem->bDirection = bDirection;
 		pItem->bUse = true;		//使用している状態にする
 
@@ -229,13 +270,13 @@ void SetItem(D3DXVECTOR3 pos, ITEMTYPE type, bool bDirection)
 
 		pVtx += (i * 4);		//該当の位置まで進める
 
-		//頂点座標の設定処理
-		SetMiddlepos(pVtx, pos, pItem->fWidth, pItem->fHeight);
-
 		switch (pItem->type)
 		{
 		case ITEMTYPE_BLOCK:		//ブロック
 			pItem->move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+
+			//頂点座標の設定処理
+			SetMiddlepos(pVtx, pos, pItem->fWidth, pItem->fHeight);
 
 			break;
 
@@ -249,6 +290,12 @@ void SetItem(D3DXVECTOR3 pos, ITEMTYPE type, bool bDirection)
 			{//左向き
 				pItem->move = D3DXVECTOR3(-STER_MOVE, 0.0f, 0.0f);
 			}
+
+			//頂点座標の設定処理
+			SetRotpos(pVtx, pos, pItem->fRot, pItem->fLength, pItem->fAngle);
+
+			pItem->fWidth = (pVtx[0].pos.x - pVtx[1].pos.x) * 0.5f;
+			pItem->fHeight = (pVtx[0].pos.y - pVtx[2].pos.y) * 0.5f;
 
 			break;
 
@@ -427,6 +474,9 @@ static void UpdateCollision(Item *pItem)
 			}
 
 			pItem->bUse = false;		//使用していない状態にする
+
+			//パーティクルの設定処理
+			SetParticle(pItem->pos, EFFECTTYPE_EXPLOSION, pItem->bDirection);
 		}
 	}
 

@@ -35,6 +35,9 @@ typedef struct
 	ITEMTYPE		type;			//í—Ş
 	float			fWidth;			//•
 	float			fHeight;		//‚‚³
+	float			fRot;			//‰ñ“]
+	float			fLength;		//‘ÎŠpü‚Ì’·‚³
+	float			fAngle;			//‘ÎŠpü‚ÌŠp“x
 	bool			bDirection;		//Œü‚« [false  : ¶Œü‚« true  : ‰EŒü‚«]
 	bool			bUse;			//g—p‚µ‚Ä‚¢‚é‚©‚Ç‚¤‚©
 }Item;

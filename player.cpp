@@ -23,14 +23,13 @@
 #define PLAYER_HEIGHT		(70.0f)			//プレイヤーの高さ
 #define MAX_MOVE			(0.3f)			//移動量の最大値
 #define MIN_MOVE			(0.1f)			//移動量の最小値
+#define EFFECT_MOVE			(2.0f)			//エフェクトの出る移動量
 #define MAX_TEX				(3)				//テクスチャの最大数
 #define MAX_U_PATTERN		(2)				//Uパターンの最大数
-#define STOP_MOVE			(0.30f)			//止まってると認定
 #define MAX_JUMP			(-27.5f)		//ジャンプ量
 #define MAX_GRAVITY			(1.5f)			//重力の最大値
 #define MAX_INERTIA			(0.05f)			//慣性の最大値
 #define MAX_INTERVAL		(7)				//カウンターのインターバル
-#define MAX_EFFECT			(256)			//エフェクトの最大数
 
 //--------------------------------------------------
 //プロトタイプ宣言
@@ -43,6 +42,7 @@ static bool UpdateUpDown(void);
 static void UpdateOffScreen(void);
 static void UpdateBound(void);
 static void UpdateMotion(void);
+static void UpdateEffect(void);
 
 //--------------------------------------------------
 //スタティック変数
@@ -95,7 +95,7 @@ void InitPlayer(void)
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
 	//メモリのクリア
-	memset(&s_Player, NULL, sizeof(s_Player));
+	memset(&s_Player, NULL, sizeof(Player));
 
 	//構造体の初期化処理
 	InitStruct();
@@ -116,9 +116,6 @@ void InitPlayer(void)
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
-
-	//エフェクトの設定処理
-	//SetEffect(s_Player.pos, D3DXVECTOR3(0.0f, 0.0f, 0.0f), D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f), s_Player.fWidth, s_Player.fHeight, 100, 0);
 
 	//ゲージの設定処理
 	SetGauge(GAUGEUSE_PLAYER, s_Player.nLife);
@@ -169,6 +166,9 @@ void UpdatePlayer(void)
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
+
+	//エフェクト処理
+	UpdateEffect();
 }
 
 //--------------------------------------------------
@@ -464,7 +464,6 @@ static void UpdateMove(VERTEX_2D *pVtx)
 				s_Player.jump = JUMPSTATE_JUMP;
 				s_Player.fHeight = PLAYER_HEIGHT;
 				s_Player.nCounterMotion = 0;
-				s_Player.nCounterJump = 0;
 			}
 		}
 
@@ -506,11 +505,21 @@ static void UpdateAttack(void)
 		{//ENTERキーが押された
 			//アイテムの吸い込み処理
 			InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
+			s_Player.nCounterAttack = 0;
+		}
+		else if (s_Player.nCounterAttack <= MAX_INTERVAL)
+		{//余韻中
+			//アイテムの吸い込み処理
+			InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
+			
 		}
 		else
 		{//吸い込めてない
 			s_Player.attack = ATTACKSTATE_NONE;
+			s_Player.nCounterAttack = 0;
 		}
+
+		s_Player.nCounterAttack++;
 
 		break;
 
@@ -561,7 +570,6 @@ static bool UpdateUpDown(void)
 			s_Player.jump = JUMPSTATE_JUMP;
 			s_Player.fHeight = PLAYER_HEIGHT;
 			s_Player.nCounterMotion = 0;
-			s_Player.nCounterJump = 0;
 		}
 	}
 
@@ -614,8 +622,6 @@ static void UpdateBound(void)
 		break;
 
 	case JUMPSTATE_LAND:		//着地
-
-		//s_Player.nCounterJump++;
 
 		if (s_Player.fWidth <= PLAYER_WIDTH * 0.5f)
 		{
@@ -707,5 +713,26 @@ static void UpdateMotion(void)
 			assert(false);
 			break;
 		}
+	}
+}
+
+//--------------------------------------------------
+//エフェクト処理
+//--------------------------------------------------
+static void UpdateEffect(void)
+{
+	if (s_Player.move.x >= EFFECT_MOVE || s_Player.move.x <= -EFFECT_MOVE)
+	{//移動中
+		if (s_Player.nCounterMotion % 2 == 0)
+		{
+			//エフェクトの設定処理
+			SetEffect(s_Player.pos, D3DXVECTOR3(0.0f, 0.0f, 0.0f), D3DXCOLOR(0.25f, 0.25f, 0.25f, 1.0f),
+				s_Player.fWidth, s_Player.fHeight * 0.2f, 10, EFFECTTYPE_MOVE);
+		}
+	}
+
+	if (s_Player.attack == ATTACKSTATE_IN)
+	{//吸い込んでる
+		SetParticle(s_Player.pos + D3DXVECTOR3(0.0f, -(s_Player.fHeight * 0.325f), 0.0f), EFFECTTYPE_IN, s_Player.bDirection);
 	}
 }
