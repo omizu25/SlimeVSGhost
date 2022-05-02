@@ -212,3 +212,37 @@ void RankColon(D3DXCOLOR col, int nRank)
 		s_pVtxBuff->Unlock();
 	}
 }
+
+//--------------------------------------------------
+//コロンの移動処理
+//--------------------------------------------------
+void MoveColon(D3DXVECTOR3 move, int nRank)
+{
+	for (int i = 0; i < MAX_COLON; i++)
+	{
+		Colon *pColon = &s_aColon[i];
+
+		if (!pColon->bUse || pColon->nRank != nRank)
+		{//コロンが使用されていない、順位が違う
+			continue;
+		}
+
+		//コロンが使用されている、順位が同じ
+
+		//位置を更新
+		pColon->pos.x += move.x;
+
+		VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+		//頂点情報をロックし、頂点情報へのポインタを取得
+		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+		pVtx += (i * 4);		//該当の位置まで進める
+
+		//頂点座標の設定処理
+		SetRightpos(pVtx, pColon->pos, pColon->fWidth, pColon->fHeight);
+
+		//頂点バッファをアンロックする
+		s_pVtxBuff->Unlock();
+	}
+}

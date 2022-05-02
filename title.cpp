@@ -144,7 +144,7 @@ void InitTitle(void)
 	Initrhw(pVtx);
 
 	//頂点カラーの設定処理
-	Setcol(pVtx, 1.0f, 1.0f, 0.5f, 1.0f);
+	Setcol(pVtx, 0.615f, 0.215f, 0.341f, 1.0f);
 
 	//頂点バッファをアンロックする
 	s_pVtxBuffBG->Unlock();

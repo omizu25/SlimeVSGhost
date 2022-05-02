@@ -66,7 +66,6 @@ void InitTutorial(void)
 	//メモリのクリア
 	memset(&s_pTexture[0], NULL, sizeof(s_pTexture));
 
-	//メモリのクリア
 	memset(&s_pTextureNext[0], NULL, sizeof(s_pTextureNext));
 
 	//テクスチャの読み込み
@@ -75,31 +74,26 @@ void InitTutorial(void)
 		"Data\\TEXTURE\\title005.png",
 		&s_pTexture[MENU_RULE]);
 
-	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\title012.png",
 		&s_pTexture[MENU_OPERATION]);
 
-	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\title010.png",
 		&s_pTextureNext[MENU_RULE]);
 
-	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\title011.png",
 		&s_pTextureNext[MENU_OPERATION]);
 
-	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\title009.png",
 		&s_pTextureEnd);
 
-	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\number002.png",
@@ -118,7 +112,6 @@ void InitTutorial(void)
 		&s_pVtxBuffBG,
 		NULL);
 
-	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
 		sizeof(VERTEX_2D) * 4 * MENU_MAX,
 		D3DUSAGE_WRITEONLY,
@@ -127,7 +120,6 @@ void InitTutorial(void)
 		&s_pVtxBuff,
 		NULL);
 
-	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
 		sizeof(VERTEX_2D) * 4,
 		D3DUSAGE_WRITEONLY,
@@ -136,7 +128,6 @@ void InitTutorial(void)
 		&s_pVtxBuffNext,
 		NULL);
 
-	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
 		sizeof(VERTEX_2D) * 4,
 		D3DUSAGE_WRITEONLY,
@@ -145,7 +136,6 @@ void InitTutorial(void)
 		&s_pVtxBuffEnd,
 		NULL);
 
-	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
 		sizeof(VERTEX_2D) * 4,
 		D3DUSAGE_WRITEONLY,
@@ -255,7 +245,7 @@ void InitTutorial(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuffBar->Lock(0, 0, (void**)&pVtx, 0);
 
-	float fHeightNumber = NUMBER_HEIGHT * 0.5;
+	float fHeightNumber = NUMBER_HEIGHT * 0.5f;
 	D3DXVECTOR3 posNumber = D3DXVECTOR3(fWidth - (NUMBER_WIDTH * 0.5f), fHeightNumber, 0.0f);
 
 	//頂点座標の設定処理
@@ -311,10 +301,37 @@ void UninitTutorial(void)
 		s_pVtxBuff = NULL;
 	}
 
+	for (int i = 0; i < MENU_MAX; i++)
+	{
+		if (s_pTextureNext[i] != NULL)
+		{//つぎへのテクスチャの破棄
+			s_pTextureNext[i]->Release();
+			s_pTextureNext[i] = NULL;
+		}
+	}
+
 	if (s_pVtxBuffNext != NULL)
 	{//つぎへの頂点バッファの破棄
 		s_pVtxBuffNext->Release();
 		s_pVtxBuffNext = NULL;
+	}
+
+	if (s_pTextureEnd != NULL)
+	{//終わりのテクスチャの破棄
+		s_pTextureEnd->Release();
+		s_pTextureEnd = NULL;
+	}
+
+	if (s_pVtxBuffEnd != NULL)
+	{//終わりの頂点バッファの破棄
+		s_pVtxBuffEnd->Release();
+		s_pVtxBuffEnd = NULL;
+	}
+
+	if (s_pTextureBar != NULL)
+	{//線のテクスチャの破棄
+		s_pTextureBar->Release();
+		s_pTextureBar = NULL;
 	}
 
 	if (s_pVtxBuffBar != NULL)
