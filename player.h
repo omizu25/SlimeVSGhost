@@ -46,7 +46,7 @@ void InitPlayer(void);
 void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
-Player GetPlayer(void);
+Player *GetPlayer(void);
 bool GetTexUsePlayer(void);
 
 #endif // !_PLAYER_H_

@@ -148,12 +148,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="bg.cpp" />
     <ClCompile Include="block.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="player.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bg.h" />
     <ClInclude Include="block.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="main.h" />

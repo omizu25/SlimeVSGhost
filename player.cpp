@@ -13,7 +13,7 @@
 //--------------------------------------------------
 //マクロ定義
 //--------------------------------------------------
-#define PLAYER_WIDTH		(75.0f)			//プレイヤーの幅
+#define PLAYER_WIDTH		(80.0f)			//プレイヤーの幅
 #define PLAYER_HEIGHT		(70.0f)			//プレイヤーの高さ
 #define PLAYER_MOVE			(0.3f)			//プレイヤーの移動量
 #define MAX_U_PATTERN		(4)				//Uパターンの最大数
@@ -53,7 +53,7 @@ void InitPlayer(void)
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
-		"Data\\TEXTURE\\リムル 009.png",
+		"Data\\TEXTURE\\player001.png",
 		&s_pTexture);
 
 	s_bTexUse = true;
@@ -97,13 +97,13 @@ void InitPlayer(void)
 void UninitPlayer(void)
 {
 	if (s_pTexture != NULL)
-	{//プレイヤーのテクスチャの破棄
+	{//テクスチャの破棄
 		s_pTexture->Release();
 		s_pTexture = NULL;
 	}
 
 	if (s_pVtxBuff != NULL)
-	{//プレイヤーの頂点バッファの破棄
+	{//頂点バッファの破棄
 		s_pVtxBuff->Release();
 		s_pVtxBuff = NULL;
 	}
@@ -178,9 +178,9 @@ void DrawPlayer(void)
 //--------------------------------------------------
 //プレイヤーの取得処理
 //--------------------------------------------------
-Player GetPlayer(void)
+Player *GetPlayer(void)
 {
-	return s_Player;
+	return &s_Player;
 }
 
 //--------------------------------------------------
@@ -270,11 +270,17 @@ static void MovePlayer(VERTEX_2D *pVtx)
 		Settex(pVtx, 0.0f, 0.5f, 0.0f, 1.0f);
 	}
 
+	bool bDown = false;
+
 	//ジャンプ処理
 	if (s_Player.jump == JUMPSTATE_NONE)
 	{//何もしてない
-		if (GetKeyboardTrigger(DIK_SPACE) || GetKeyboardTrigger(DIK_W) || 
-			GetJoypadTrigger(JOYKEY_B))
+		if (GetKeyboardPress(DIK_S) || GetJoypadPress(JOYKEY_DOWN))
+		{
+			bDown = true;
+		}
+		else if (GetKeyboardTrigger(DIK_SPACE) || GetKeyboardTrigger(DIK_W) || 
+				 GetJoypadTrigger(JOYKEY_B))
 		{//スペースキー、Wキーが押された
 			s_Player.move.y += MAX_JUMP;
 			s_Player.jump = JUMPSTATE_JUMP;
@@ -310,6 +316,12 @@ static void MovePlayer(VERTEX_2D *pVtx)
 			s_Player.fHeight = PLAYER_HEIGHT;
 			s_Player.nCounterState = 0;
 		}
+	}
+
+	if (bDown)
+	{//降りるｄ
+		//ブロックの上端の当たり判定
+		CollisionTopBlock(&s_Player.pos, s_Player.fWidth, s_Player.fHeight);
 	}
 
 	//慣性・移動量を更新 (減衰させる)

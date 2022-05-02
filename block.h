@@ -21,9 +21,11 @@
 //--------------------------------------------------
 typedef enum
 {
-	BLOCKTYPE_BROWN = 0,		//茶色
-	BLOCKTYPE_ORANGE,			//オレンジ
-	BLOCKTYPE_NONE,				//使用しない
+	BLOCKTYPE_BLUE = 0,			//青
+	BLOCKTYPE_LIGHT_BLUE,		//水色
+	BLOCKTYPE_B_THROUGH,		//青の通り抜ける
+	BLOCKTYPE_L_THROUGH,		//水色の通り抜ける
+	BLOCKTYPE_NONE,
 	BLOCKTYPE_MAX
 }BLOCKTYPE;
 
@@ -36,6 +38,7 @@ typedef struct
 	float			fWidth;			//幅
 	float			fHeight;		//高さ
 	BLOCKTYPE		type;			//種類
+	bool			bCollision;		//当たるかどうか
 	bool			bUse;			//使用しているかどうか
 }Block;
 
@@ -51,5 +54,6 @@ Block *GetBlock(void);
 bool GetTexUseBlock(void);
 bool GetCollisionUse(void);
 bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove, float fWidth, float fHeight);
+void CollisionTopBlock(D3DXVECTOR3 *pPos, float fWidth, float fHeight);
 
 #endif // !_Block_H_

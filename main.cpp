@@ -4,6 +4,7 @@
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
+#include "bg.h"
 #include "block.h"
 #include "input.h"
 #include "main.h"
@@ -286,6 +287,9 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	//ジョイパッドの初期化処理
 	InitJoypad();
 
+	//背景の初期化処理
+	InitBG();
+
 	//ブロックの初期化処理
 	InitBlock();
 
@@ -309,6 +313,9 @@ void Uninit(void)
 
 	//ジョイパッドの終了処理
 	UninitJoypad();
+
+	//背景の終了処理
+	UninitBG();
 
 	//ブロックの終了処理
 	UninitBlock();
@@ -361,6 +368,9 @@ void Update(void)
 
 	if (!s_bPause)
 	{//ポーズしてない時
+		//背景の更新処理
+		UpdateBG();
+
 		//ブロックの更新処理
 		UpdateBlock();
 
@@ -399,6 +409,9 @@ void Draw(void)
 		//-------------------------
 		//各種オブジェクトの描画処理
 		//-------------------------
+		//背景の描画処理
+		DrawBG();
+
 		//ブロックの描画処理
 		DrawBlock();
 
