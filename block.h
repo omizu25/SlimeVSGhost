@@ -1,6 +1,6 @@
 //--------------------------------------------------
 //
-// アクションゲーム制作 ( block.h )
+// ACG制作 ( block.h )
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
@@ -15,6 +15,9 @@
 #define MAX_X_BLOCK					(32)				//ブロックの横の最大数
 #define MAX_Y_BLOCK					(18)				//ブロックの縦の最大数
 #define MAX_BLOCK		(MAX_Y_BLOCK * MAX_X_BLOCK)		//ブロックの最大数
+#define TOP_BLOCK					(7)					//上の段のブロック
+#define MIDDLE_BLOCK				(12)				//真ん中の段のブロック
+#define BOTTOM_BLOCK				(17)				//下の段のブロック
 
 //--------------------------------------------------
 //ブロックの種類を定義

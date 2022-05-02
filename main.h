@@ -1,6 +1,6 @@
 //--------------------------------------------------
 //
-// アクションゲーム制作 ( main.h )
+// ACG制作 ( main.h )
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
@@ -31,6 +31,19 @@
 #define SCREEN_HEIGHT		(720)												//ウインドウの高さ
 #define FVF_VERTEX_2D		(D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1)		//頂点フォーマット[2D]
 
+//-------------------------
+//画面(モード)の種類の列挙型を定義
+//-------------------------
+typedef enum
+{
+	MODE_TITLE = 0,		//タイトル
+	MODE_RULE,			//ルール
+	MODE_GAME,			//ゲーム
+	MODE_RESULT,		//リザルト
+	MODE_RANKING,		//ランキング
+	MODE_MAX
+}MODE;
+
 //--------------------------------------------------
 //頂点情報[2D]の構造体を定義
 //--------------------------------------------------
@@ -46,6 +59,8 @@ typedef struct
 //プロトタイプ宣言
 //--------------------------------------------------
 LPDIRECT3DDEVICE9 GetDevice(void);
+void SetMode(MODE mode);
+MODE GetMode(void);
 void SetMiddlepos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight);
 void SetBottompos(VERTEX_2D *pVtx, D3DXVECTOR3 pos, float fWidth, float fHeight);
 void Setrhw(VERTEX_2D *pVtx);

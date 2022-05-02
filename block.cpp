@@ -1,6 +1,6 @@
 //--------------------------------------------------
 //
-// STG制作 ( block.cpp )
+// ACG制作 ( block.cpp )
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
@@ -19,6 +19,13 @@
 #define MAX_TEX			(BLOCKTYPE_MAX - 1)				//テクスチャの最大数
 
 //--------------------------------------------------
+//プロトタイプ宣言
+//--------------------------------------------------
+static void InitStruct(int i);
+static void InitType(void);
+static void DownCollision(void);
+
+//--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
 static LPDIRECT3DTEXTURE9			s_pTexture[MAX_TEX];		//テクスチャへのポインタ
@@ -27,13 +34,6 @@ static Block						s_aBlock[MAX_BLOCK];		//ブロックの情報
 static bool							s_bThrough;					//ブロックが通り抜けるか [false :通り抜けない true : 通り抜ける]
 static bool							s_bTexUse;					//テクスチャの使用するかどうか
 static bool							s_bCollisionUse;			//当たり判定を判断するかどうか
-
-//--------------------------------------------------
-//プロトタイプ宣言
-//--------------------------------------------------
-static void InitStructBlock(int i);
-static void InitBlockType(void);
-static void DownCollisionBlock(void);
 
 //--------------------------------------------------
 //ブロックの初期化処理
@@ -93,8 +93,8 @@ void InitBlock(void)
 	//ブロックの情報の初期化設定
 	for (int i = 0; i < MAX_BLOCK; i++)
 	{
-		//プレイヤーの構造体の初期化処理
-		InitStructBlock(i);
+		//構造体の初期化処理
+		InitStruct(i);
 
 		//頂点座標の設定処理
 		SetMiddlepos(pVtx, s_aBlock[i].pos, s_aBlock[i].fWidth, s_aBlock[i].fHeight);
@@ -114,8 +114,8 @@ void InitBlock(void)
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
 
-	//ブロックの種類の初期化処理
-	InitBlockType();
+	//種類の初期化処理
+	InitType();
 }
 
 //--------------------------------------------------
@@ -146,8 +146,8 @@ void UpdateBlock(void)
 {
 	if (s_bThrough)
 	{//通り抜ける
-		//ブロックの下がるときの当たり判定
-		DownCollisionBlock();
+		//下がるときの当たり判定処理
+		DownCollision();
 	}
 
 #ifdef  _DEBUG
@@ -300,6 +300,7 @@ bool CollisionBlock(D3DXVECTOR3 *pPos, D3DXVECTOR3 *pPosOld, D3DXVECTOR3 *pMove,
 		//ブロックが使用されている
 
 		bool bCollision = false;
+
 		float fLeft = pBlock->pos.x - pBlock->fWidth;
 		float fRight = pBlock->pos.x + pBlock->fWidth;
 		float fTop = pBlock->pos.y - pBlock->fHeight;
@@ -395,21 +396,21 @@ void CollisionTopBlock(D3DXVECTOR3 *pPos, float fWidth, float fHeight)
 			continue;
 		}
 
-		//ブロックが使用されている
-		Player *pPlayer = GetPlayer();		//プレイヤーの情報を取得
+		float fLeft = pBlock->pos.x - pBlock->fWidth;
+		float fRight = pBlock->pos.x + pBlock->fWidth;
+		float fTop = pBlock->pos.y - pBlock->fHeight;
+		float fBottom = pBlock->pos.y + pBlock->fHeight;
 
-		if (pPlayer->pos.x + pPlayer->fWidth >= (pBlock->pos.x - pBlock->fWidth) &&
-			pPlayer->pos.x - pPlayer->fWidth <= (pBlock->pos.x + pBlock->fWidth) &&
-			pPlayer->pos.y >= (pBlock->pos.y - pBlock->fHeight) &&
-			pPlayer->pos.y - pPlayer->fHeight <= (pBlock->pos.y + pBlock->fHeight))
+		if ((pPos->x + fWidth >= fLeft) && (pPos->x - fWidth <= fRight) &&
+			(pPos->y >= fTop) && (pPos->y - fHeight <= fBottom))
 		{//X,Yがブロックの範囲内
-			if (pBlock->type == BLOCKTYPE_B_THROUGH ||
-				pBlock->type == BLOCKTYPE_L_THROUGH)
+			if ((pBlock->type == BLOCKTYPE_B_THROUGH) ||
+				(pBlock->type == BLOCKTYPE_L_THROUGH))
 			{//通り抜けるブロックだったら
 				s_bThrough = true;
 			}
-			else if (pBlock->type == BLOCKTYPE_BLUE ||
-				pBlock->type == BLOCKTYPE_LIGHT_BLUE)
+			else if ((pBlock->type == BLOCKTYPE_BLUE) ||
+				(pBlock->type == BLOCKTYPE_LIGHT_BLUE))
 			{//通り抜けないブロックだったら
 				s_bThrough = false;
 				break;
@@ -430,8 +431,8 @@ void CollisionTopBlock(D3DXVECTOR3 *pPos, float fWidth, float fHeight)
 
 			//ブロックが使用されている
 
-			if (pBlock->type == BLOCKTYPE_B_THROUGH ||
-				pBlock->type == BLOCKTYPE_L_THROUGH)
+			if ((pBlock->type == BLOCKTYPE_B_THROUGH) ||
+				(pBlock->type == BLOCKTYPE_L_THROUGH))
 			{//指定の種類
 				pBlock->bCollision = false;
 			}
@@ -440,9 +441,9 @@ void CollisionTopBlock(D3DXVECTOR3 *pPos, float fWidth, float fHeight)
 }
 
 //--------------------------------------------------
-//ブロックの構造体の初期化処理
+//構造体の初期化処理
 //--------------------------------------------------
-static void InitStructBlock(int i)
+static void InitStruct(int i)
 {
 	s_aBlock[i].pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 	s_aBlock[i].fWidth = 0.0f;
@@ -455,9 +456,9 @@ static void InitStructBlock(int i)
 }
 
 //--------------------------------------------------
-//ブロックの種類の初期化処理
+//種類の初期化処理
 //--------------------------------------------------
-static void InitBlockType(void)
+static void InitType(void)
 {
 	FILE *pBlockFile;		//ファイルポインタを宣言
 	char aData[FILE_DATA];
@@ -468,35 +469,35 @@ static void InitBlockType(void)
 
 	if (pBlockFile != NULL)
 	{//ファイルが開いた場合
-		for (int i = 0;  i< MAX_Y_BLOCK; i++)
+		for (int y = 0;  y < MAX_Y_BLOCK; y++)
 		{
 			//一行読み込み
 			fgets(aData, FILE_DATA, pBlockFile);
 
-			for (int j = 0; j < MAX_X_BLOCK; j++)
+			for (int x = 0; x < MAX_X_BLOCK; x++)
 			{
 				//変換
-				switch (atoi(&aData[j * 2]))
+				switch (atoi(&aData[x * 2]))
 				{
 				case 0:		//使用しない
 				default:
-					aBlock[i][j] = BLOCKTYPE_NONE;
+					aBlock[y][x] = BLOCKTYPE_NONE;
 					break;
 
 				case 1:		//青
-					aBlock[i][j] = BLOCKTYPE_BLUE;
+					aBlock[y][x] = BLOCKTYPE_BLUE;
 					break;
 
 				case 2:		//水色
-					aBlock[i][j] = BLOCKTYPE_LIGHT_BLUE;
+					aBlock[y][x] = BLOCKTYPE_LIGHT_BLUE;
 					break;
 
 				case 3:		//青の通り抜ける
-					aBlock[i][j] = BLOCKTYPE_B_THROUGH;
+					aBlock[y][x] = BLOCKTYPE_B_THROUGH;
 					break;
 
 				case 4:		//水色の通り抜ける
-					aBlock[i][j] = BLOCKTYPE_L_THROUGH;
+					aBlock[y][x] = BLOCKTYPE_L_THROUGH;
 					break;
 				}
 			}
@@ -518,13 +519,13 @@ static void InitBlockType(void)
 	float fWidth = SCREEN_WIDTH / MAX_X_BLOCK / 2.0f;
 	float fHeight = SCREEN_HEIGHT / MAX_Y_BLOCK / 2.0f;
 
-	for (int i = 0; i < MAX_Y_BLOCK; i++)
+	for (int y = 0; y < MAX_Y_BLOCK; y++)
 	{
-		float fPosY = (SCREEN_HEIGHT / MAX_Y_BLOCK / 2.0f) + (i * SCREEN_HEIGHT / MAX_Y_BLOCK);
+		float fPosY = (SCREEN_HEIGHT / MAX_Y_BLOCK / 2.0f) + (y * SCREEN_HEIGHT / MAX_Y_BLOCK);
 
-		for (int j = 0; j < MAX_X_BLOCK; j++)
+		for (int x = 0; x < MAX_X_BLOCK; x++)
 		{
-			switch (aBlock[i][j])
+			switch (aBlock[y][x])
 			{
 			case BLOCKTYPE_NONE:		//使用しない
 			default:
@@ -535,9 +536,9 @@ static void InitBlockType(void)
 			case BLOCKTYPE_B_THROUGH:		//青の通り抜ける
 			case BLOCKTYPE_L_THROUGH:		//水色の通り抜ける
 
-				float fPosX = (SCREEN_WIDTH / MAX_X_BLOCK / 2.0f) + (j * SCREEN_WIDTH / MAX_X_BLOCK);
+				float fPosX = (SCREEN_WIDTH / MAX_X_BLOCK / 2.0f) + (x * SCREEN_WIDTH / MAX_X_BLOCK);
 
-				s_aBlock[nCntUse].type = aBlock[i][j];
+				s_aBlock[nCntUse].type = aBlock[y][x];
 
 				//ブロックの設定
 				SetBlock(D3DXVECTOR3(fPosX, fPosY, 0.0f), fWidth, fHeight);
@@ -550,9 +551,9 @@ static void InitBlockType(void)
 }
 
 //--------------------------------------------------
-//ブロックの上端の当たり判定処理
+//下がるときの当たり判定処理
 //--------------------------------------------------
-static void DownCollisionBlock(void)
+static void DownCollision(void)
 {
 	bool bCollision = false;
 
@@ -572,10 +573,18 @@ static void DownCollisionBlock(void)
 		{//指定の種類
 			Player *pPlayer = GetPlayer();		//プレイヤーの情報を取得
 
-			if (pPlayer->pos.x + pPlayer->fWidth >= (pBlock->pos.x - pBlock->fWidth) &&
-				pPlayer->pos.x - pPlayer->fWidth <= (pBlock->pos.x + pBlock->fWidth) &&
-				pPlayer->pos.y >= (pBlock->pos.y - pBlock->fHeight) &&
-				pPlayer->pos.y - pPlayer->fHeight <= (pBlock->pos.y + pBlock->fHeight))
+			float fPlayerLeft = pPlayer->pos.x - pPlayer->fWidth;
+			float fPlayerRight = pPlayer->pos.x + pPlayer->fWidth;
+			float fPlayerTop = pPlayer->pos.y - pPlayer->fHeight;
+			float fPlayerBottom = pPlayer->pos.y;
+
+			float fLeft = pBlock->pos.x - pBlock->fWidth;
+			float fRight = pBlock->pos.x + pBlock->fWidth;
+			float fTop = pBlock->pos.y - pBlock->fHeight;
+			float fBottom = pBlock->pos.y + pBlock->fHeight;
+
+			if (fPlayerRight >= fLeft && fPlayerLeft <= fRight &&
+				fPlayerBottom >= fTop && fPlayerTop <= fBottom)
 			{//X,Yがブロックの範囲内
 				bCollision = true;
 				break;

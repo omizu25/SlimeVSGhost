@@ -1,6 +1,6 @@
 //--------------------------------------------------
 //
-// アクションゲーム制作 ( player.cpp )
+// ACG制作 ( player.cpp )
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
@@ -16,14 +16,21 @@
 #define PLAYER_WIDTH		(80.0f)			//プレイヤーの幅
 #define PLAYER_HEIGHT		(70.0f)			//プレイヤーの高さ
 #define PLAYER_MOVE			(0.3f)			//プレイヤーの移動量
-#define MAX_U_PATTERN		(4)				//Uパターンの最大数
-#define MAX_V_PATTERN		(2)				//Vパターンの最大数
+#define MAX_U_PATTERN		(2)				//Uパターンの最大数
 #define MIN_MOVE			(0.30f)			//動いてる最小値
 #define MAX_JUMP			(-27.5f)		//ジャンプ量
 #define MAX_BOUND			(5.0f)			//バウンドの最大回数
 #define MAX_GRAVITY			(1.5f)			//重力の最大値
 #define MAX_INERTIA			(0.05f)			//慣性の最大値
-#define CNT_INTERVAL		(7)				//カウンターのインターバル
+
+//--------------------------------------------------
+//プロトタイプ宣言
+//--------------------------------------------------
+static void InitStruct(void);
+static void UpdateMove(VERTEX_2D *pVtx);
+static void UpdateOffScreen(void);
+static void UpdateBound(void);
+static void UpdateMotion(void);
 
 //--------------------------------------------------
 //スタティック変数
@@ -32,15 +39,6 @@ static LPDIRECT3DTEXTURE9			s_pTexture = NULL;		//テクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;		//頂点バッファのポインタ
 static Player						s_Player;				//プレイヤーの情報
 static bool							s_bTexUse;				//テクスチャの使用するかどうか
-
-//--------------------------------------------------
-//プロトタイプ宣言
-//--------------------------------------------------
-static void InitStructPlayer(void);
-static void MovePlayer(VERTEX_2D *pVtx);
-static void OffScreenPlayer(void);
-static void BoundPlayer(void);
-static void MotionPlayer(void);
 
 //--------------------------------------------------
 //プレイヤーの初期化処理
@@ -53,7 +51,7 @@ void InitPlayer(void)
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
-		"Data\\TEXTURE\\player001.png",
+		"Data\\TEXTURE\\Player001.png",
 		&s_pTexture);
 
 	s_bTexUse = true;
@@ -72,8 +70,8 @@ void InitPlayer(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
-	//プレイヤーの構造体の初期化処理
-	InitStructPlayer();
+	//構造体の初期化処理
+	InitStruct();
 
 	//頂点座標の設定処理
 	SetBottompos(pVtx, s_Player.pos, s_Player.fWidth, s_Player.fHeight);
@@ -85,7 +83,7 @@ void InitPlayer(void)
 	Setcol(pVtx, 1.0f, 1.0f, 1.0f, 1.0f);
 
 	//テクスチャ座標の設定処理
-	Settex(pVtx, 0.0f, 0.5f, 0.0f, 1.0f);
+	Settex(pVtx, 0.0f, 1.0f / MAX_U_PATTERN, 0.0f, 1.0f);
 
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
@@ -119,14 +117,11 @@ void UpdatePlayer(void)
 	//頂点情報をロックし、頂点情報へのポインタを取得
 	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
-	//プレイヤーの移動処理
-	MovePlayer(pVtx);
+	//移動処理
+	UpdateMove(pVtx);
 
-	//プレイヤーの画面外処理
-	OffScreenPlayer();
-
-	//プレイヤーのモーション処理
-	MotionPlayer();
+	//モーション処理
+	UpdateMotion();
 
 	//頂点座標の設定処理
 	SetBottompos(pVtx, s_Player.pos, s_Player.fWidth, s_Player.fHeight);
@@ -192,13 +187,13 @@ bool GetTexUsePlayer(void)
 }
 
 //--------------------------------------------------
-//プレイヤーの構造体の初期化処理
+//構造体の初期化処理
 //--------------------------------------------------
-static void InitStructPlayer(void)
+static void InitStruct(void)
 {
 	//現在の位置を初期化
-	s_Player.pos.x = PLAYER_WIDTH * 0.5f;
-	s_Player.pos.y = (SCREEN_HEIGHT / MAX_Y_BLOCK) * (MAX_Y_BLOCK - 1);
+	s_Player.pos.x = SCREEN_WIDTH * 0.5f;
+	s_Player.pos.y = (SCREEN_HEIGHT / MAX_Y_BLOCK) * MIDDLE_BLOCK;
 	s_Player.pos.z = 0.0f;
 
 	s_Player.posOld = D3DXVECTOR3(0.0f, 0.0f, 0.0f);		//前回の位置を初期化
@@ -210,9 +205,9 @@ static void InitStructPlayer(void)
 }
 
 //--------------------------------------------------
-//プレイヤーの移動処理
+//移動処理
 //--------------------------------------------------
-static void MovePlayer(VERTEX_2D *pVtx)
+static void UpdateMove(VERTEX_2D *pVtx)
 {
 	//キー入力での移動
 	if (GetKeyboardPress(DIK_A) || GetJoypadPress(JOYKEY_LEFT))
@@ -240,7 +235,8 @@ static void MovePlayer(VERTEX_2D *pVtx)
 		}
 
 		//テクスチャ座標の設定処理
-		Settex(pVtx, 0.5f, 1.0f, 0.0f, 1.0f);
+		Settex(pVtx, 1.0f / MAX_U_PATTERN, 1.0f, 0.0f, 1.0f);
+		
 	}
 	else if (GetKeyboardPress(DIK_D) || GetJoypadPress(JOYKEY_RIGHT))
 	{//Dキーが押された
@@ -265,9 +261,9 @@ static void MovePlayer(VERTEX_2D *pVtx)
 			assert(false);
 			break;
 		}
-
+		
 		//テクスチャ座標の設定処理
-		Settex(pVtx, 0.0f, 0.5f, 0.0f, 1.0f);
+		Settex(pVtx, 0.0f, 1.0f / MAX_U_PATTERN, 0.0f, 1.0f);
 	}
 
 	bool bDown = false;
@@ -305,8 +301,8 @@ static void MovePlayer(VERTEX_2D *pVtx)
 	//ブロックの当たり判定処理
 	if (CollisionBlock(&s_Player.pos, &s_Player.posOld, &s_Player.move, s_Player.fWidth, s_Player.fHeight))
 	{//ブロックの上端にいる時
-		//プレイヤーのバウンド処理
-		BoundPlayer();
+		//バウンド処理
+		UpdateBound();
 	}
 	else
 	{//空中
@@ -326,20 +322,23 @@ static void MovePlayer(VERTEX_2D *pVtx)
 
 	//慣性・移動量を更新 (減衰させる)
 	s_Player.move.x += (0.0f - s_Player.move.x) * MAX_INERTIA;
+
+	//画面外処理
+	UpdateOffScreen();
 }
 
 //--------------------------------------------------
-//プレイヤーの画面外処理
+//画面外処理
 //--------------------------------------------------
-static void OffScreenPlayer(void)
+static void UpdateOffScreen(void)
 {
 	//画面端処理
 	if (s_Player.pos.y >= SCREEN_HEIGHT)
 	{//下端
 		s_Player.pos.y = SCREEN_HEIGHT;
 
-		//プレイヤーのバウンド処理
-		BoundPlayer();
+		//バウンド処理
+		UpdateBound();
 	}
 	else if (s_Player.pos.y <= PLAYER_HEIGHT)
 	{//上端
@@ -358,9 +357,9 @@ static void OffScreenPlayer(void)
 }
 
 //--------------------------------------------------
-//プレイヤーのバウンド処理
+//バウンド処理
 //--------------------------------------------------
-static void BoundPlayer(void)
+static void UpdateBound(void)
 {
 	switch (s_Player.jump)
 	{
@@ -393,9 +392,9 @@ static void BoundPlayer(void)
 }
 
 //--------------------------------------------------
-//プレイヤーのモーション処理
+//モーション処理
 //--------------------------------------------------
-static void MotionPlayer(void)
+static void UpdateMotion(void)
 {
 	Block *pBlock = GetBlock();		//ブロックの情報を授かる
 	float fPosY = 0.0f;

@@ -1,40 +1,41 @@
 //--------------------------------------------------
 //
-// アクションゲーム制作 ( main.cpp )
+// ACG制作 ( main.cpp )
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
-#include "bg.h"
-#include "block.h"
+#include "fade.h"
+#include "game.h"
 #include "input.h"
 #include "main.h"
-#include "player.h"
+
+#include <assert.h>
 
 //--------------------------------------------------
 //マクロ定義
 //--------------------------------------------------
 #define CLASS_NAME		"windowClass"		//ウインドウクラスの名前
-#define WINDOW_NAME		"STG制作"			//ウインドウの名前 (キャプションに表示)
+#define WINDOW_NAME		"ACG制作"			//ウインドウの名前 (キャプションに表示)
 
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow);
-void Uninit(void);
-void Update(void);
-void Draw(void);
-void DrawDebug(void);
+static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow);
+static void Uninit(void);
+static void Update(void);
+static void Draw(void);
+static void DrawDebug(void);
 
 //--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
 static LPDIRECT3D9				s_pD3D = NULL;				//Direct3Dオブジェクトへのポインタ
 static LPDIRECT3DDEVICE9		s_pD3DDevice = NULL;		//Direct3Dデバイスへのポインタ
+static MODE						s_mode = MODE_GAME;			//現在のモード
 static LPD3DXFONT				s_pFont = NULL;				//フォントへのポインタ
 static int						s_nCountFPS = 0;			//FPSカウンタ
 static bool						s_bDebug = true;			//デバッグ表示をするか [表示  : true 非表示  : false]
-static bool						s_bPause = false;			//ポーズ中かどうか [してる  : true してない  : false]
 
 //--------------------------------------------------
 //main関数
@@ -162,7 +163,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hInstancePrev, LPSTR lpCmdLine
 //--------------------------------------------------
 //ウインドウプロシージャ
 //--------------------------------------------------
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
@@ -188,7 +189,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 //--------------------------------------------------
 //初期化処理
 //--------------------------------------------------
-HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
+static HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 {
 	D3DDISPLAYMODE d3ddm;				//ディスプレイモード
 	D3DPRESENT_PARAMETERS d3dpp;		//プレゼンテーションパラメータ
@@ -287,14 +288,8 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	//ジョイパッドの初期化処理
 	InitJoypad();
 
-	//背景の初期化処理
-	InitBG();
-
-	//ブロックの初期化処理
-	InitBlock();
-
-	//プレイヤーの初期化処理
-	InitPlayer();
+	//フェードの設定
+	InitFade(s_mode);
 	
 	return S_OK;
 }
@@ -302,7 +297,7 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 //--------------------------------------------------
 //終了処理
 //--------------------------------------------------
-void Uninit(void)
+static void Uninit(void)
 {
 	//-------------------------
 	//各種オブジェクトの終了処理
@@ -314,14 +309,8 @@ void Uninit(void)
 	//ジョイパッドの終了処理
 	UninitJoypad();
 
-	//背景の終了処理
-	UninitBG();
-
-	//ブロックの終了処理
-	UninitBlock();
-
-	//プレイヤーの終了処理
-	UninitPlayer();
+	//ゲームの終了処理
+	UninitGame();
 
 	if (s_pFont != NULL)
 	{//デバッグ表示用フォントの破棄
@@ -345,7 +334,7 @@ void Uninit(void)
 //--------------------------------------------------
 //更新処理
 //--------------------------------------------------
-void Update(void)
+static void Update(void)
 {
 	//-------------------------
 	//各種オブジェクトの更新処理
@@ -357,26 +346,31 @@ void Update(void)
 	//ジョイパッドの更新処理
 	UpdateJoypad();
 
-#ifdef  _DEBUG
+	switch (s_mode)
+	{//どのモード？
+	case MODE_TITLE:		//タイトル
+		break;
 
-	if (GetKeyboardTrigger(DIK_P) || GetJoypadTrigger(JOYKEY_Y))
-	{//ポーズキー(Pキー)が押されたかどうか
-		s_bPause = !s_bPause;
+	case MODE_RULE:			//ルール
+		break;
+
+	case MODE_GAME:			//ゲーム
+		UpdateGame();
+		break;
+
+	case MODE_RESULT:		//リザルト
+		break;
+
+	case MODE_RANKING:		//ランキング
+		break;
+
+	default:
+		assert(false);
+		break;
 	}
 
-#endif //  _DEBUG
-
-	if (!s_bPause)
-	{//ポーズしてない時
-		//背景の更新処理
-		UpdateBG();
-
-		//ブロックの更新処理
-		UpdateBlock();
-
-		//プレイヤーの更新処理
-		UpdatePlayer();
-	}
+	//フェードの更新処理
+	UpdateFade();
 
 #ifdef  _DEBUG
 
@@ -392,7 +386,7 @@ void Update(void)
 //--------------------------------------------------
 //描画処理
 //--------------------------------------------------
-void Draw(void)
+static void Draw(void)
 {
 	//画面クリア(バッグバッファ＆Zバッファのクリア)
 	s_pD3DDevice->Clear(
@@ -409,14 +403,31 @@ void Draw(void)
 		//-------------------------
 		//各種オブジェクトの描画処理
 		//-------------------------
-		//背景の描画処理
-		DrawBG();
+		switch (s_mode)
+		{//どのモード？
+		case MODE_TITLE:		//タイトル
+			break;
 
-		//ブロックの描画処理
-		DrawBlock();
+		case MODE_RULE:			//ルール
+			break;
 
-		//プレイヤーの描画処理
-		DrawPlayer();
+		case MODE_GAME:			//ゲーム
+			DrawGame();
+			break;
+
+		case MODE_RESULT:		//リザルト
+			break;
+
+		case MODE_RANKING:		//ランキング
+			break;
+
+		default:
+			assert(false);
+			break;
+		}
+
+		//フェードの描画処理
+		DrawFade();
 
 #ifdef  _DEBUG
 
@@ -437,6 +448,23 @@ void Draw(void)
 }
 
 //--------------------------------------------------
+//デバッグの表示
+//--------------------------------------------------
+static void DrawDebug(void)
+{
+	RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+	char aStr[256];
+	int nLength;
+
+	//文字列の代入
+	wsprintf(&aStr[0], "FPS  [ F1 ]  : %3d\n", s_nCountFPS);
+	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+
+											//テキストの描画
+	s_pFont->DrawText(NULL, &aStr[0], -1, &rect, DT_LEFT, D3DCOLOR_RGBA(0, 255, 255, 255));
+}
+
+//--------------------------------------------------
 //デバイスの取得
 //--------------------------------------------------
 LPDIRECT3DDEVICE9 GetDevice(void)
@@ -444,69 +472,68 @@ LPDIRECT3DDEVICE9 GetDevice(void)
 	return s_pD3DDevice;
 }
 
-//--------------------------------------------------
-//デバッグの表示
-//--------------------------------------------------
-void DrawDebug(void)
+//-------------------------
+//モードの設定
+//-------------------------
+void SetMode(MODE mode)
 {
-	RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-	char aStr[256];
-	int nLength;
+	//現在の画面(モード)の終了処理
+	switch (s_mode)
+	{//どのモード？
+	case MODE_TITLE:		//タイトル
+		break;
 
-	//文字列の代入
-	wsprintf(&aStr[0], "FPS        [ F1 ]  : %3d\n", s_nCountFPS);
-	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+	case MODE_RULE:			//ルール
+		break;
 
-	if (s_bPause)
-	{//ポーズしてる
-		wsprintf(&aStr[nLength], "ポーズ     [ Ｐ ]  :【 ON 】\n");
-	}
-	else
-	{//ポーズしてない
-		wsprintf(&aStr[nLength], "ポーズ     [ Ｐ ]  :【 OFF 】\n");
-	}
+	case MODE_GAME:			//ゲーム
+		UninitGame();
+		break;
 
-	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+	case MODE_RESULT:		//リザルト
+		break;
 
-	bool pTexUsePlayer = GetTexUsePlayer();		//プレイヤーのテクスチャを使用するかの取得
+	case MODE_RANKING:		//ランキング
+		break;
 
-	if (pTexUsePlayer)
-	{//プレイヤーのテクスチャ
-		wsprintf(&aStr[nLength], "Player.tex [ F2 ]  :【 ON 】\n");
-	}
-	else
-	{//プレイヤーのテクスチャ
-		wsprintf(&aStr[nLength], "Player.tex [ F2 ]  :【 OFF 】\n");
+	default:
+		assert(false);
+		break;
 	}
 
-	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+	//新しい画面(モード)の終了処理
+	switch (mode)
+	{//どのモード？
+	case MODE_TITLE:		//タイトル
+		break;
 
-	bool pTexUseBlock = GetTexUseBlock();		//ブロックのテクスチャを使用するかの取得
+	case MODE_RULE:			//ルール
+		break;
 
-	if (pTexUseBlock)
-	{//ブロックのテクスチャ
-		wsprintf(&aStr[nLength], "Block.tex  [ F3 ]  :【 ON 】\n");
-	}
-	else
-	{//ブロックのテクスチャ
-		wsprintf(&aStr[nLength], "Block.tex  [ F3 ]  :【 OFF 】\n");
-	}
+	case MODE_GAME:			//ゲーム
+		InitGame();
+		break;
 
-	nLength = (int)strlen(&aStr[0]);		//文字数の取得
+	case MODE_RESULT:		//リザルト
+		break;
 
-	bool pCollisionUse = GetCollisionUse();		//当たり判定を判断するかの取得
+	case MODE_RANKING:		//ランキング
+		break;
 
-	if (pCollisionUse)
-	{//当たり判定を判断する
-		wsprintf(&aStr[nLength], "Collision  [ F4 ]  :【 ON 】\n");
-	}
-	else
-	{//当たり判定を判断する
-		wsprintf(&aStr[nLength], "Collision  [ F4 ]  :【 OFF 】\n");
+	default:
+		assert(false);
+		break;
 	}
 
-	//テキストの描画
-	s_pFont->DrawText(NULL, &aStr[0], -1, &rect, DT_LEFT, D3DCOLOR_RGBA(0, 255, 255, 255));
+	s_mode = mode;		//現在の画面(モード)を切り替える
+}
+
+//-------------------------
+//モードの取得
+//-------------------------
+MODE GetMode(void)
+{
+	return s_mode;
 }
 
 //--------------------------------------------------
