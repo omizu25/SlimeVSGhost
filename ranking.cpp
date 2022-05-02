@@ -211,8 +211,6 @@ void InitRanking(void)
 	//コロンの初期化処理
 	InitColon();
 
-	//s_nRankUpdate = 1;
-
 	//位置を初期化する
 	s_pos = D3DXVECTOR3(2000.0f, 175.0f, 0.0f);
 
@@ -684,9 +682,6 @@ static bool UpdateWherePos(void)
 		{//５位まで
 			s_move[i].x = -(s_fWidth[i] - (SPECIFIED_POS_X - 0.1f));
 		}
-
-		//位置を更新
-		s_pos.x = SPECIFIED_POS_X;
 	}
 
 	return bWherePos;

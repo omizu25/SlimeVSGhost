@@ -14,7 +14,7 @@
 //--------------------------------------------------
 typedef enum
 {
-	RESULT_NONE = 0,		//‚Ü‚¾Œˆ‚Ü‚Á‚Ä‚È‚¢
+	RESULT_NONE = -1,		//‚Ü‚¾Œˆ‚Ü‚Á‚Ä‚È‚¢
 	RESULT_WIN,				//Ÿ‚¿
 	RESULT_LOSE,			//•‰‚¯
 	RESULT_MAX

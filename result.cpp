@@ -4,20 +4,39 @@
 // Author  : katsuki mizuki
 //
 //--------------------------------------------------
+#include "colon.h"
 #include "fade.h"
 #include "input.h"
+#include "number.h"
 #include "result.h"
 #include "setup.h"
 #include "sound.h"
+#include "time.h"
 
 #include <assert.h>
 
 //--------------------------------------------------
+//マクロ定義
+//--------------------------------------------------
+#define RESULT_WIDTH		(600.0f)		//負けと勝ちの幅
+#define RESULT_HEIGHT		(300.0f)		//負けと勝ちの高さ
+#define TIME_WIDTH			(400.0f)		//タイムの幅
+#define TIME_HEIGHT			(160.0f)		//タイムの高さ
+#define NUMBER_WIDTH		(100.0f)		//数の幅
+#define NUMBER_HEIGHT		(250.0f)		//数の高さ
+#define WIDTH_INTERVAL		(40.0f)			//幅の間隔
+#define HEIGHT_INTERVAL		(20.0f)			//高さの間隔
+
+//--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
-static LPDIRECT3DTEXTURE9			s_pTexture[RESULT_MAX];		//テクスチャへのポインタ
-static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;			//頂点バッファのポインタ
-static RESULT						s_Result;					//リザルトの情報
+static LPDIRECT3DTEXTURE9			s_pTextureBG[RESULT_MAX];		//背景のテクスチャへのポインタ
+static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuffBG = NULL;			//背景の頂点バッファのポインタ
+static LPDIRECT3DTEXTURE9			s_pTexture[RESULT_MAX];			//テクスチャへのポインタ
+static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;				//頂点バッファのポインタ
+static LPDIRECT3DTEXTURE9			s_pTextureTime = NULL;			//タイムのテクスチャへのポインタ
+static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuffTime = NULL;			//タイムの頂点バッファのポインタ
+static RESULT						s_Result;						//リザルトの情報
 
 //--------------------------------------------------
 //リザルトの初期化処理
@@ -30,17 +49,47 @@ void InitResult(void)
 	//メモリのクリア
 	memset(&s_pTexture[0], NULL, sizeof(s_pTexture));
 
+	//メモリのクリア
+	memset(&s_pTextureBG[0], NULL, sizeof(s_pTextureBG));
+
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
-		"Data\\TEXTURE\\result000.png",
+		"Data\\TEXTURE\\result006.jpg",
+		&s_pTextureBG[RESULT_LOSE]);
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\result007.png",
+		&s_pTextureBG[RESULT_WIN]);
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\result005.png",
 		&s_pTexture[RESULT_LOSE]);
 
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
-		"Data\\TEXTURE\\result003.png",
+		"Data\\TEXTURE\\result004.png",
 		&s_pTexture[RESULT_WIN]);
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\result009.png",
+		&s_pTextureTime);
+
+	//頂点バッファの生成
+	pDevice->CreateVertexBuffer(
+		sizeof(VERTEX_2D) * 4,
+		D3DUSAGE_WRITEONLY,
+		FVF_VERTEX_2D,
+		D3DPOOL_MANAGED,
+		&s_pVtxBuffBG,
+		NULL);
 
 	//頂点バッファの生成
 	pDevice->CreateVertexBuffer(
@@ -51,17 +100,28 @@ void InitResult(void)
 		&s_pVtxBuff,
 		NULL);
 
+	//頂点バッファの生成
+	pDevice->CreateVertexBuffer(
+		sizeof(VERTEX_2D) * 4,
+		D3DUSAGE_WRITEONLY,
+		FVF_VERTEX_2D,
+		D3DPOOL_MANAGED,
+		&s_pVtxBuffTime,
+		NULL);
+
 	VERTEX_2D *pVtx;		//頂点情報へのポインタ
 
-	//頂点情報をロックし、頂点情報へのポインタを取得
-	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+	/* ↓背景↓ */
 
-	float fWidth = SCREEN_WIDTH * 0.5f;
-	float fHeight = SCREEN_HEIGHT * 0.5f;
-	D3DXVECTOR3 pos = D3DXVECTOR3(fWidth, fHeight, 0.0f);
+	//頂点情報をロックし、頂点情報へのポインタを取得
+	s_pVtxBuffBG->Lock(0, 0, (void**)&pVtx, 0);
+
+	float fWidthBG = SCREEN_WIDTH * 0.5f;
+	float fHeightBG = SCREEN_HEIGHT * 0.5f;
+	D3DXVECTOR3 posBG = D3DXVECTOR3(fWidthBG, fHeightBG, 0.0f);
 
 	//頂点座標の設定処理
-	SetMiddlepos(pVtx, pos, fWidth, fHeight);
+	SetMiddlepos(pVtx, posBG, fWidthBG, fHeightBG);
 
 	//rhwの初期化処理
 	Initrhw(pVtx);
@@ -73,19 +133,125 @@ void InitResult(void)
 	Inittex(pVtx);
 
 	//頂点バッファをアンロックする
-	s_pVtxBuff->Unlock();
+	s_pVtxBuffBG->Unlock();
+
+	/* ↓負けと勝ち↓ */
+
+	//頂点情報をロックし、頂点情報へのポインタを取得
+	s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
 
 	if (s_Result == RESULT_LOSE)
 	{//負け
+		float fWidth = RESULT_WIDTH * 0.5f;
+		float fHeight = RESULT_HEIGHT * 0.5f;
+		D3DXVECTOR3 pos = D3DXVECTOR3(RESULT_WIDTH * 0.6f, RESULT_HEIGHT * 0.35f, 0.0f);
+
+		//頂点座標の設定処理
+		SetMiddlepos(pVtx, pos, fWidth, fHeight);
+	}
+	else
+	{
+		float fWidth = RESULT_WIDTH * 0.5f;
+		float fHeight = RESULT_HEIGHT * 0.5f;
+		D3DXVECTOR3 pos = D3DXVECTOR3(fHeightBG, RESULT_HEIGHT * 0.35f, 0.0f);
+
+		//頂点座標の設定処理
+		SetMiddlepos(pVtx, pos, fWidth, fHeight);
+	}
+
+	//rhwの初期化処理
+	Initrhw(pVtx);
+
+	if (s_Result == RESULT_WIN)
+	{//勝ち
+		//頂点カラーの設定処理
+		Setcol(pVtx, 0.0f, 0.0f, 0.0f, 1.0f);
+	}
+	else
+	{
+		//頂点カラーの初期化処理
+		Initcol(pVtx);
+	}
+
+	//テクスチャ座標の初期化処理
+	Inittex(pVtx);
+
+	//頂点バッファをアンロックする
+	s_pVtxBuff->Unlock();
+
+	/* ↓今回のタイム↓ */
+
+	//頂点情報をロックし、頂点情報へのポインタを取得
+	s_pVtxBuffTime->Lock(0, 0, (void**)&pVtx, 0);
+
+	float fWidthTime = TIME_WIDTH * 0.5f;
+	float fHeightTime = TIME_HEIGHT * 0.5f;
+	D3DXVECTOR3 posTime = D3DXVECTOR3(TIME_WIDTH * 0.75f, SCREEN_HEIGHT * 0.4f, 0.0f);
+
+	//頂点座標の設定処理
+	SetMiddlepos(pVtx, posTime, fWidthTime, fHeightTime);
+
+	//rhwの初期化処理
+	Initrhw(pVtx);
+
+	//頂点カラーの設定処理
+	Setcol(pVtx, 0.8f, 0.0f, 0.8f, 1.0f);
+
+	//テクスチャ座標の初期化処理
+	Inittex(pVtx);
+
+	//頂点バッファをアンロックする
+	s_pVtxBuffTime->Unlock();
+
+	/* ↓数関連↓ */
+
+	//数の初期化処理
+	InitNumber();
+
+	//コロンの初期化処理
+	InitColon();
+
+	//位置を初期化する
+	D3DXVECTOR3 posNumber = D3DXVECTOR3(1000.0f, SCREEN_HEIGHT * 0.7f, 0.0f);
+
+	int nTime = GetTime();
+	int aNumber[MAX_TIME];
+
+	for (int i = 0; i < MAX_TIME; i++)
+	{//１桁ずつに分ける
+		aNumber[i] = nTime % 10;
+		nTime /= 10;
+
+		float fInterval = (NUMBER_WIDTH * i) + (WIDTH_INTERVAL * (i / 2));
+
+		//数の設定処理
+		SetRightNumber(D3DXVECTOR3(posNumber.x - fInterval, posNumber.y, 0.0f), NUMBER_WIDTH, NUMBER_HEIGHT * 0.5f, aNumber[i], i, -1);
+
+		if ((i % 2 == 0) && (i != 0))
+		{//２の倍数
+			//コロンの設定処理
+			SetColon(D3DXVECTOR3(posNumber.x - fInterval + WIDTH_INTERVAL, posNumber.y, 0.0f), WIDTH_INTERVAL, NUMBER_HEIGHT * 0.5f, -1);
+		}
+	}
+
+	switch (s_Result)
+	{
+	case RESULT_LOSE:		//負け
 		//サウンドの再生
 		PlaySound(SOUND_LABEL_MYSTERYMAN);
-	}
-	else if (s_Result == RESULT_WIN)
-	{//勝ち
+		break;
+
+	case RESULT_WIN:		//勝ち
 		//サウンドの再生
 		PlaySound(SOUND_LABEL_START_BEETS);
+		break;
+
+	case RESULT_NONE:		//まだ決まってない
+		//breakなし
+	default:
+		assert(false);
+		break;
 	}
-	
 }
 
 //--------------------------------------------------
@@ -95,6 +261,21 @@ void UninitResult(void)
 {
 	//サウンドの停止
 	StopSound();
+
+	for (int i = 0; i < RESULT_MAX; i++)
+	{
+		if (s_pTextureBG[i] != NULL)
+		{//背景のテクスチャの破棄
+			s_pTextureBG[i]->Release();
+			s_pTextureBG[i] = NULL;
+		}
+	}
+
+	if (s_pVtxBuffBG != NULL)
+	{//背景の頂点バッファの破棄
+		s_pVtxBuffBG->Release();
+		s_pVtxBuffBG = NULL;
+	}
 
 	for (int i = 0; i < RESULT_MAX; i++)
 	{
@@ -110,6 +291,24 @@ void UninitResult(void)
 		s_pVtxBuff->Release();
 		s_pVtxBuff = NULL;
 	}
+
+	if (s_pTextureTime != NULL)
+	{//タイムのテクスチャの破棄
+		s_pTextureTime->Release();
+		s_pTextureTime = NULL;
+	}
+
+	if (s_pVtxBuffTime != NULL)
+	{//タイムの頂点バッファの破棄
+		s_pVtxBuffTime->Release();
+		s_pVtxBuffTime = NULL;
+	}
+
+	//数の終了処理
+	UninitNumber();
+
+	//コロンの終了処理
+	UninitColon();
 }
 
 //--------------------------------------------------
@@ -133,13 +332,19 @@ void UpdateResult(void)
 
 		case RESULT_NONE:		//何もしていない状態
 
-			//breakなし
+			//breakなし　
 
 		default:
 			assert(false);
 			break;
 		}
 	}
+
+	//数の更新処理
+	UpdateNumber();
+
+	//コロンの更新処理
+	UpdateColon();
 }
 
 //--------------------------------------------------
@@ -147,10 +352,23 @@ void UpdateResult(void)
 //--------------------------------------------------
 void DrawResult(void)
 {
-	LPDIRECT3DDEVICE9 pDevice;		//デバイスへのポインタ
+	//デバイスへのポインタの取得
+	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
-	//デバイスの取得
-	pDevice = GetDevice();
+	//頂点バッファをデータストリームに設定
+	pDevice->SetStreamSource(0, s_pVtxBuffBG, 0, sizeof(VERTEX_2D));
+
+	//頂点フォーマットの設定
+	pDevice->SetFVF(FVF_VERTEX_2D);
+
+	//テクスチャの設定
+	pDevice->SetTexture(0, s_pTextureBG[s_Result]);
+
+	//ポリゴンの描画
+	pDevice->DrawPrimitive(
+		D3DPT_TRIANGLESTRIP,		//プリミティブの種類
+		0,							//描画する最初の頂点インデックス
+		2);							//プリミティブ(ポリゴン)数
 
 	//頂点バッファをデータストリームに設定
 	pDevice->SetStreamSource(0, s_pVtxBuff, 0, sizeof(VERTEX_2D));
@@ -166,6 +384,30 @@ void DrawResult(void)
 		D3DPT_TRIANGLESTRIP,		//プリミティブの種類
 		0,							//描画する最初の頂点インデックス
 		2);							//プリミティブ(ポリゴン)数
+
+	if (s_Result == RESULT_WIN)
+	{//勝ち
+		//頂点バッファをデータストリームに設定
+		pDevice->SetStreamSource(0, s_pVtxBuffTime, 0, sizeof(VERTEX_2D));
+
+		//頂点フォーマットの設定
+		pDevice->SetFVF(FVF_VERTEX_2D);
+
+		//テクスチャの設定
+		pDevice->SetTexture(0, s_pTextureTime);
+
+		//ポリゴンの描画
+		pDevice->DrawPrimitive(
+			D3DPT_TRIANGLESTRIP,		//プリミティブの種類
+			0,							//描画する最初の頂点インデックス
+			2);							//プリミティブ(ポリゴン)数
+
+		//数の描画処理
+		DrawNumber();
+
+		//コロンの描画処理
+		DrawColon();
+	}
 }
 
 //--------------------------------------------------

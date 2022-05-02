@@ -9,6 +9,8 @@
 #include "player.h"
 #include "setup.h"
 
+#include "effect.h"
+
 #include <stdio.h>
 #include <assert.h>
 

@@ -44,7 +44,7 @@ static bool UpdateUpDown(void);
 static void UpdateOffScreen(void);
 static void UpdateBound(void);
 static void UpdateMotion(void);
-static void UpdateEffect(void);
+static void UpdateSetEffect(void);
 
 //--------------------------------------------------
 //スタティック変数
@@ -159,6 +159,14 @@ void UpdatePlayer(void)
 
 	if (s_Player.state != PLAYERSTATE_DEATH)
 	{//生きてる
+#ifdef _DEBUG
+		if (GetKeyboardTrigger(DIK_F3))
+		{//F3キーが押された
+			//プレイヤーのヒット処理
+			HitPlayer(100);
+		}
+#endif // DEBUG
+
 		//移動処理
 		UpdateMove(pVtx);
 
@@ -172,8 +180,8 @@ void UpdatePlayer(void)
 	//頂点バッファをアンロックする
 	s_pVtxBuff->Unlock();
 
-	//エフェクト処理
-	UpdateEffect();
+	//エフェクトの設定処理
+	UpdateSetEffect();
 }
 
 //--------------------------------------------------
@@ -782,9 +790,9 @@ static void UpdateMotion(void)
 }
 
 //--------------------------------------------------
-//エフェクト処理
+//エフェクトの設定処理
 //--------------------------------------------------
-static void UpdateEffect(void)
+static void UpdateSetEffect(void)
 {
 	if (s_Player.move.x >= EFFECT_MOVE || s_Player.move.x <= -EFFECT_MOVE)
 	{//移動中
@@ -798,6 +806,7 @@ static void UpdateEffect(void)
 
 	if (s_Player.attack == ATTACKSTATE_IN)
 	{//吸い込んでる
+		//パーティクルの設定処理
 		SetParticle(s_Player.pos + D3DXVECTOR3(0.0f, -(s_Player.fHeight * 0.325f), 0.0f), EFFECTTYPE_IN, s_Player.bDirection);
 	}
 }

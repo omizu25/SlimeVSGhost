@@ -15,6 +15,7 @@
 //--------------------------------------------------
 #define MAX_NUMBER		(256)		//数の最大桁数
 #define MAX_TEX			(10)		//texの最大数
+#define NUM_TEX			(2)			//texの種類
 
 //--------------------------------------------------
 //ランキングの状態(点滅具合)を定義
@@ -43,7 +44,7 @@ typedef struct
 //--------------------------------------------------
 //スタティック変数
 //--------------------------------------------------
-static LPDIRECT3DTEXTURE9			s_pTexture = NULL;			//テクスチャへのポインタ
+static LPDIRECT3DTEXTURE9			s_pTexture[NUM_TEX];		//テクスチャへのポインタ
 static LPDIRECT3DVERTEXBUFFER9		s_pVtxBuff = NULL;			//頂点バッファのポインタ
 static Number						s_aNumber[MAX_NUMBER];		//数の情報
 static RANKSTATE					s_state;					//状態
@@ -57,11 +58,20 @@ void InitNumber(void)
 	//デバイスへのポインタの取得
 	LPDIRECT3DDEVICE9 pDevice = GetDevice();
 
+	//メモリのクリア
+	memset(&s_pTexture[0], NULL, sizeof(s_pTexture));
+
 	//テクスチャの読み込み
 	D3DXCreateTextureFromFile(
 		pDevice,
 		"Data\\TEXTURE\\number000.png",
-		&s_pTexture);
+		&s_pTexture[0]);
+
+	//テクスチャの読み込み
+	D3DXCreateTextureFromFile(
+		pDevice,
+		"Data\\TEXTURE\\number003.png",
+		&s_pTexture[1]);
 
 	s_state = RANKSTATE_IN;
 	s_col = D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f);
@@ -100,10 +110,13 @@ void InitNumber(void)
 //--------------------------------------------------
 void UninitNumber(void)
 {
-	if (s_pTexture != NULL)
-	{//テクスチャの破棄
-		s_pTexture->Release();
-		s_pTexture = NULL;
+	for (int i = 0; i < NUM_TEX; i++)
+	{
+		if (s_pTexture[i] != NULL)
+		{//テクスチャの破棄
+			s_pTexture[i]->Release();
+			s_pTexture[i] = NULL;
+		}
 	}
 
 	if (s_pVtxBuff != NULL)
@@ -118,7 +131,54 @@ void UninitNumber(void)
 //--------------------------------------------------
 void UpdateNumber(void)
 {
-	
+	for (int i = 0; i < MAX_NUMBER; i++)
+	{
+		Number *pNumber = &s_aNumber[i];
+
+		if (!pNumber->bUse || pNumber->nRank != -1 || s_col.a >= 1.0f)
+		{//数が使用されていない、指定のランクじゃない
+			continue;
+		}
+
+		//数が使用されている、指定のランク
+
+		s_col.a += 0.01f;		//ポリゴンを不透明にしていく
+
+		if (s_col.a >= 1.0f)
+		{
+			s_col.a = 1.0f;
+		}
+
+		//コロンのランク処理
+		RankColon(s_col, -1);
+
+		break;
+	}
+
+	for (int i = 0; i < MAX_NUMBER; i++)
+	{
+		Number *pNumber = &s_aNumber[i];
+
+		if (!pNumber->bUse || pNumber->nRank != -1)
+		{//数が使用されていない、指定のランクじゃない
+			continue;
+		}
+
+		//数が使用されている、指定のランク
+
+		VERTEX_2D *pVtx;		//頂点情報へのポインタ
+
+		//頂点情報をロックし、頂点情報へのポインタを取得
+		s_pVtxBuff->Lock(0, 0, (void**)&pVtx, 0);
+
+		pVtx += (i * 4);		//該当の位置まで進める
+
+		//頂点カラーの設定処理
+		Setcol(pVtx, s_col.r, s_col.g, s_col.b, s_col.a);
+
+		//頂点バッファをアンロックする
+		s_pVtxBuff->Unlock();
+	}
 }
 
 //--------------------------------------------------
@@ -135,13 +195,21 @@ void DrawNumber(void)
 	//頂点フォーマットの設定
 	pDevice->SetFVF(FVF_VERTEX_2D);
 
-	//テクスチャの設定
-	pDevice->SetTexture(0, s_pTexture);
-
 	for (int i = 0; i < MAX_NUMBER; i++)
 	{
 		if (s_aNumber[i].bUse)
 		{//数が使用されている
+			if (s_aNumber[i].nDigit <= -1)
+			{
+				//テクスチャの設定
+				pDevice->SetTexture(0, s_pTexture[1]);
+			}
+			else
+			{
+				//テクスチャの設定
+				pDevice->SetTexture(0, s_pTexture[0]);
+			}
+
 			//ポリゴンの描画
 			pDevice->DrawPrimitive(
 				D3DPT_TRIANGLESTRIP,		//プリミティブの種類
@@ -188,9 +256,22 @@ void SetRightNumber(D3DXVECTOR3 pos, float fWidth, float fHeight, int nNumber, i
 		float fTex = 1.0f / MAX_TEX;
 		float fNumberTex = fTex * nNumber;
 
-		//頂点カラーの設定処理
-		Setcol(pVtx, 0.0f, 0.0f, 0.0f, 1.0f);
+		if (nRank == -1)
+		{//指定のランク
+			s_col = D3DXCOLOR(0.0f, 0.0f, 1.0f, 0.0f);
 
+			//頂点カラーの設定処理
+			Setcol(pVtx, s_col.r, s_col.g, s_col.b, s_col.a);
+		}
+		else
+		{
+			//頂点カラーの設定処理
+			Setcol(pVtx, 0.0f, 0.0f, 0.0f, 1.0f);
+
+			s_state = RANKSTATE_IN;
+			s_col = D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f);
+		}
+		
 		//テクスチャ座標の設定処理
 		Settex(pVtx, 0.0f + fNumberTex, fTex + fNumberTex, 0.0f, 1.0f);
 

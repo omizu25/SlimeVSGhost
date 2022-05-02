@@ -175,6 +175,17 @@ void SetColon(D3DXVECTOR3 pos, float fWidth, float fHeight, int nRank)
 		//頂点座標の設定処理
 		SetRightpos(pVtx, pos, fWidth, fHeight);
 
+		if (nRank == -1)
+		{//指定のランク
+			//頂点カラーの設定処理
+			Setcol(pVtx, 0.0f, 0.0f, 0.0f, 0.0f);
+		}
+		else
+		{
+			//頂点カラーの設定処理
+			Setcol(pVtx, 0.0f, 0.0f, 0.0f, 1.0f);
+		}
+
 		//頂点バッファをアンロックする
 		s_pVtxBuff->Unlock();
 

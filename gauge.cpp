@@ -27,7 +27,6 @@ static GaugeFrame					s_Frame[MAX_GAUGE];			//フレームの情報
 //--------------------------------------------------
 //プロトタイプ宣言
 //--------------------------------------------------
-static void InitFrameStruct(GaugeFrame *pFrame);
 static void SetPos(VERTEX_2D *pVtx, Gauge *pGauge);
 static void SetCol(VERTEX_2D *pVtx, Gauge *pGauge);
 static void SetFrame(Gauge *pGauge);
@@ -308,32 +307,6 @@ void SubGauge(GAUGEUSE use, int nLife)
 
 		break;		//ここでfor文を抜ける
 	}
-}
-
-//--------------------------------------------------
-//ゲージの構造体の初期化処理
-//--------------------------------------------------
-static void InitGaugeStruct(Gauge *pGauge)
-{
-	pGauge->pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pGauge->use = GAUGEUSE_PLAYER;
-	pGauge->type = GAUGETYPE_REMAINING;
-	pGauge->fWidth = 0.0f;
-	pGauge->fHeight = 0.0f;
-	pGauge->nCounter = 0;
-	pGauge->bUse = false;
-}
-
-//--------------------------------------------------
-//フレームの構造体の初期化処理
-//--------------------------------------------------
-static void InitFrameStruct(GaugeFrame *pFrame)
-{
-	pFrame->pos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	pFrame->use = GAUGEUSE_PLAYER;
-	pFrame->fWidth = 0.0f;
-	pFrame->fHeight = 0.0f;
-	pFrame->bUse = false;
 }
 
 //--------------------------------------------------

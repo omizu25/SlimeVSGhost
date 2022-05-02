@@ -496,26 +496,29 @@ static void DrawDebug(void)
 	int nLength;
 
 	//•¶š—ñ‚Ì‘ã“ü
-	wsprintf(&aStr[0], "FPS  [ F1 ]  : %3d\n", s_nCountFPS);
+	wsprintf(&aStr[0], "FPS    [ F1 ]  : %3d\n", s_nCountFPS);
 	nLength = (int)strlen(&aStr[0]);		//•¶š”‚Ìæ“¾
 
 	if (GetDeath())
 	{//€‚Ê
-		wsprintf(&aStr[nLength], "€   [ F2 ]  : true\n");
+		wsprintf(&aStr[nLength], "ˆêŒ‚   [ F2 ]  : true\n");
 	}
 	else
 	{//€‚È‚È‚¢
-		wsprintf(&aStr[nLength], "€   [ F2 ]  : false\n");
+		wsprintf(&aStr[nLength], "ˆêŒ‚   [ F2 ]  : false\n");
 	}
 	
 	nLength = (int)strlen(&aStr[0]);		//•¶š”‚Ìæ“¾
 
-	Player *pPlayer = GetPlayer();
-
-	wsprintf(&aStr[nLength], "ATTACK       : %3d\n", pPlayer->attack);
+	wsprintf(&aStr[nLength], "ƒLƒ‹   [ F3 ]\n");
 	nLength = (int)strlen(&aStr[0]);		//•¶š”‚Ìæ“¾
 
-	wsprintf(&aStr[nLength], "Life         : %3d\n", pPlayer->nLife);
+	Player *pPlayer = GetPlayer();
+
+	wsprintf(&aStr[nLength], "ATTACK         : %3d\n", pPlayer->attack);
+	nLength = (int)strlen(&aStr[0]);		//•¶š”‚Ìæ“¾
+
+	wsprintf(&aStr[nLength], "Life           : %3d\n", pPlayer->nLife);
 	nLength = (int)strlen(&aStr[0]);		//•¶š”‚Ìæ“¾
 
 
