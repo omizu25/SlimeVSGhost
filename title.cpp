@@ -98,7 +98,7 @@ void InitTitle(void)
 
 	s_Menu = MENU_GAME;
 	s_state = MENUSTATE_IN;
-	s_col = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	s_col = D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f);
 	s_fChange = 0.025f;
 
 	//頂点バッファの生成
@@ -186,8 +186,8 @@ void InitTitle(void)
 		//rhwの初期化処理
 		Initrhw(pVtx);
 
-		//頂点カラーの初期化処理
-		Initcol(pVtx);
+		//頂点カラーの設定処理
+		Setcol(pVtx,0.0f, 1.0f, 1.0f, 1.0f);
 
 		//テクスチャ座標の初期化処理
 		Inittex(pVtx);
@@ -343,7 +343,7 @@ static void UpdateInput(VERTEX_2D *pVtx)
 		GetJoypadTrigger(JOYKEY_UP) || GetJoypadTrigger(JOYKEY_DOWN))
 	{//Wキー、Sキーが押されたかどうか
 		//色の初期化
-		s_col = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+		s_col = D3DXCOLOR(0.0f, 1.0f, 1.0f, 1.0f);
 
 		//状態(点滅具合)の初期化
 		s_state = MENUSTATE_IN;
@@ -360,7 +360,7 @@ static void UpdateInput(VERTEX_2D *pVtx)
 
 		s_Menu = (MENU)nMenu;
 
-		s_col = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+		s_col = D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f);
 	}
 	else if (GetKeyboardTrigger(DIK_S) || GetJoypadTrigger(JOYKEY_DOWN))
 	{//Sキーが押されたかどうか
@@ -368,7 +368,7 @@ static void UpdateInput(VERTEX_2D *pVtx)
 
 		s_Menu = (MENU)nMenu;
 
-		s_col = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+		s_col = D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f);
 	}
 }
 

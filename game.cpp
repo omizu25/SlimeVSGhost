@@ -217,7 +217,6 @@ void DrawGame(void)
 
 	//ƒQ[ƒW‚Ì•`‰æˆ—
 	DrawGauge();
-
 	//”‚Ì•`‰æˆ—
 	DrawNumber();
 

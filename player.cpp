@@ -441,7 +441,7 @@ static void UpdateAttack(void)
 	case ATTACKSTATE_NONE:			//何もしていない状態
 		if (s_Player.jump == JUMPSTATE_NONE)
 		{//何もしてない
-			if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_A))
+			if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
 			{//ENTERキーが押された
 				s_Player.attack = ATTACKSTATE_IN;
 				s_Player.move = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
@@ -451,7 +451,7 @@ static void UpdateAttack(void)
 		break;
 
 	case ATTACKSTATE_IN:			//吸い込んでる状態
-		if (GetKeyboardPress(DIK_RETURN) || GetJoypadPress(JOYKEY_A))
+		if (GetKeyboardPress(DIK_RETURN) || GetJoypadPress(JOYKEY_B))
 		{//ENTERキーが押された
 			//アイテムの吸い込み処理
 			InhaleItem(s_Player.pos, &s_Player.attack, s_Player.fWidth, s_Player.fHeight, s_Player.bDirection);
@@ -464,7 +464,7 @@ static void UpdateAttack(void)
 		break;
 
 	case ATTACKSTATE_STORE:			//蓄えている状態
-		if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_A))
+		if (GetKeyboardTrigger(DIK_RETURN) || GetJoypadTrigger(JOYKEY_B))
 		{//ENTERキーが押された
 			//アイテムの設定処理
 			SetItem(s_Player.pos - D3DXVECTOR3(0.0f, s_Player.fHeight * 0.5f, 0.0f), ITEMTYPE_STAR, s_Player.bDirection);
@@ -504,7 +504,7 @@ static bool UpdateUpDown(void)
 			bDown = true;
 		}
 		else if (GetKeyboardTrigger(DIK_SPACE) || GetKeyboardTrigger(DIK_W) ||
-			GetJoypadTrigger(JOYKEY_B))
+			GetJoypadTrigger(JOYKEY_A) || GetJoypadTrigger(JOYKEY_UP))
 		{//スペースキー、Wキーが押された
 			s_Player.move.y += MAX_JUMP;
 			s_Player.jump = JUMPSTATE_JUMP;
